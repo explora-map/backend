@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,14 +17,10 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * Erros de validación Bean Validation (@Valid).
-     * Devolve 400 con mapa { campo → mensaxe }.
-     */
+    /** 400 — Bean Validation failures. Returns { field → message } map. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationErrors(
             MethodArgumentNotValidException ex) {
-
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String field   = ((FieldError) error).getField();
@@ -33,23 +30,37 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errors);
     }
 
-    /**
-     * Erros de lóxica de negocio (username/correo duplicado, etc.)
-     * Devolve 400 con { "message": "..." }
-     */
+    /** 404 — Resource not found (mapa, convite, etc.). */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgument(
+    public ResponseEntity<Map<String, String>> handleNotFound(
             IllegalArgumentException ex) {
-        log.warn("Erro de negocio: {}", ex.getMessage());
+        log.warn("Recurso non atopado: {}", ex.getMessage());
         return ResponseEntity
-                .badRequest()
+                .status(HttpStatus.NOT_FOUND)
                 .body(Map.of("message", ex.getMessage()));
     }
 
-    /**
-     * Credenciais incorrectas no login.
-     * Devolve 401 con { "message": "..." }
-     */
+    /** 403 — Ownership / permission violation. */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(
+            IllegalStateException ex) {
+        log.warn("Acceso denegado: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    /** 404 — User lookup failed (UsernameNotFoundException extends AuthenticationException). */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUsernameNotFound(
+            UsernameNotFoundException ex) {
+        log.warn("Usuaria non atopada: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Usuaria non atopada: " + ex.getMessage()));
+    }
+
+    /** 401 — Bad credentials on login. */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleBadCredentials(
             BadCredentialsException ex) {
@@ -58,18 +69,12 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", "Username ou contrasinal incorrecto."));
     }
 
-    /**
-     * Erros de refresh token (expirado, non encontrado) e outros RuntimeException
-     * relacionados co fluxo de autenticación. Devolve 401.
-     * NOTA: usa RuntimeException porque aínda non hai tipos de excepción propios;
-     * cando se engadan (ex. TokenException), afinar este handler.
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntime(
-            RuntimeException ex) {
-        log.warn("Erro de autenticación/token: {}", ex.getMessage());
+    /** 500 — Unexpected errors. Stack trace is logged but never exposed to the client. */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
+        log.error("Erro inesperado", ex);
         return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("message", ex.getMessage()));
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Erro interno do servidor. Contacta co administrador."));
     }
 }

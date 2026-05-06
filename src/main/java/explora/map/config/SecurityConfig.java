@@ -59,6 +59,10 @@ public class SecurityConfig {
                 .headers(headers ->
                         headers.frameOptions(frame -> frame.sameOrigin()))
 
+                // Resposta 401 en JSON cando non hai credenciais válidas
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(authEntryPointJwt))
+
                 // Rexistramos o noso filtro JWT antes do filtro estándar de Spring
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
