@@ -11,18 +11,13 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class MarcadorResponseDTO {
+public class CategoriaResponseDTO {
     private Long id;
     private String nome;
-    private String descricion;
-    private Double latitude;
-    private Double lonxitude;
+    private String cor;
+    private String icona;
     private Long mapaId;
     private String creadoPor;
     private LocalDateTime dataCreacion;
     private LocalDateTime dataModificacion;
-    private Long categoriaId;
-    private String categoriaNome;
-    private String categoriaCor;
-    private String categoriaIcona;
 }

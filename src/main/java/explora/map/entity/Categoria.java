@@ -22,8 +22,8 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "marcador")
-public class Marcador {
+@Table(name = "categoria")
+public class Categoria {
     @Id
     @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,22 +32,15 @@ public class Marcador {
     @Column(nullable = false)
     private String nome;
 
-    private String descricion;
-
     @Column(nullable = false)
-    private Double latitude;
+    private String cor;
 
-    @Column(nullable = false)
-    private Double lonxitude;
+    private String icona;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mapa_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Mapa mapa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id", foreignKey = @ForeignKey(name = "fk_marcador_categoria"), nullable = true)
-    private Categoria categoria;
 
     @CreatedBy
     @Column(nullable = false, updatable = false)

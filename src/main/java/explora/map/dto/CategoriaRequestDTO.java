@@ -1,7 +1,6 @@
 package explora.map.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,18 +10,13 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class MarcadorRequestDTO {
+public class CategoriaRequestDTO {
 
     @NotBlank
     private String nome;
 
-    private String descricion;
+    @NotBlank
+    private String cor;
 
-    @NotNull
-    private Double latitude;
-
-    @NotNull
-    private Double lonxitude;
-
-    private Long categoriaId;
+    private String icona;
 }

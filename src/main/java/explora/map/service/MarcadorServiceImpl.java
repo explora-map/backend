@@ -2,11 +2,10 @@ package explora.map.service;
 
 import explora.map.dto.MarcadorRequestDTO;
 import explora.map.dto.MarcadorResponseDTO;
-import explora.map.entity.EstadoConvite;
+import explora.map.entity.Categoria;
 import explora.map.entity.Mapa;
 import explora.map.entity.Marcador;
-import explora.map.entity.TipoMapa;
-import explora.map.repository.ConviteRepository;
+import explora.map.repository.CategoriaRepository;
 import explora.map.repository.MarcadorRepository;
 import explora.map.repository.MapaRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +21,15 @@ public class MarcadorServiceImpl implements MarcadorService {
 
     private final MarcadorRepository marcadorRepository;
     private final MapaRepository mapaRepository;
-    private final ConviteRepository conviteRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final MapaAccesoService mapaAccesoService;
 
     @Transactional(readOnly = true)
     @Override
     public List<MarcadorResponseDTO> listarPorMapa(Long mapaId, String username) {
         Mapa mapa = mapaRepository.findById(mapaId)
                 .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        verificarAccesoMapa(mapa, username);
+        mapaAccesoService.verificar(mapa, username);
         return marcadorRepository.findByMapaId(mapaId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
@@ -39,7 +39,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public MarcadorResponseDTO crear(Long mapaId, MarcadorRequestDTO dto, String username) {
         Mapa mapa = mapaRepository.findById(mapaId)
                 .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        verificarAccesoMapa(mapa, username);
+        mapaAccesoService.verificar(mapa, username);
         Marcador marcador = new Marcador();
         marcador.setNome(dto.getNome());
         marcador.setDescricion(dto.getDescricion());
@@ -47,6 +47,11 @@ public class MarcadorServiceImpl implements MarcadorService {
         marcador.setLonxitude(dto.getLonxitude());
         marcador.setMapa(mapa);
         marcador.setCreadoPor(username);
+        if (dto.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(dto.getCategoriaId())
+                    .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + dto.getCategoriaId()));
+            marcador.setCategoria(categoria);
+        }
         return toDTO(marcadorRepository.save(marcador));
     }
 
@@ -62,6 +67,13 @@ public class MarcadorServiceImpl implements MarcadorService {
         marcador.setDescricion(dto.getDescricion());
         marcador.setLatitude(dto.getLatitude());
         marcador.setLonxitude(dto.getLonxitude());
+        if (dto.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(dto.getCategoriaId())
+                    .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + dto.getCategoriaId()));
+            marcador.setCategoria(categoria);
+        } else {
+            marcador.setCategoria(null);
+        }
         return toDTO(marcadorRepository.save(marcador));
     }
 
@@ -76,32 +88,23 @@ public class MarcadorServiceImpl implements MarcadorService {
         marcadorRepository.delete(marcador);
     }
 
-    private void verificarAccesoMapa(Mapa mapa, String username) {
-        if (mapa.getTipo() == TipoMapa.PUBLICO) {
-            return;
-        }
-        if (mapa.getCreadoPor().equals(username)) {
-            return;
-        }
-        boolean tenConviteAceptado = conviteRepository.findByMapaId(mapa.getId()).stream()
-                .anyMatch(c -> c.getEstado() == EstadoConvite.ACEPTADO
-                        && c.getConvidada().getUsername().equals(username));
-        if (!tenConviteAceptado) {
-            throw new IllegalStateException("Sen permiso para acceder a este mapa");
-        }
-    }
-
     private MarcadorResponseDTO toDTO(Marcador m) {
-        return new MarcadorResponseDTO(
-                m.getId(),
-                m.getNome(),
-                m.getDescricion(),
-                m.getLatitude(),
-                m.getLonxitude(),
-                m.getMapa().getId(),
-                m.getCreadoPor(),
-                m.getDataCreacion(),
-                m.getDataModificacion()
-        );
+        MarcadorResponseDTO dto = new MarcadorResponseDTO();
+        dto.setId(m.getId());
+        dto.setNome(m.getNome());
+        dto.setDescricion(m.getDescricion());
+        dto.setLatitude(m.getLatitude());
+        dto.setLonxitude(m.getLonxitude());
+        dto.setMapaId(m.getMapa().getId());
+        dto.setCreadoPor(m.getCreadoPor());
+        dto.setDataCreacion(m.getDataCreacion());
+        dto.setDataModificacion(m.getDataModificacion());
+        if (m.getCategoria() != null) {
+            dto.setCategoriaId(m.getCategoria().getId());
+            dto.setCategoriaNome(m.getCategoria().getNome());
+            dto.setCategoriaCor(m.getCategoria().getCor());
+            dto.setCategoriaIcona(m.getCategoria().getIcona());
+        }
+        return dto;
     }
 }
