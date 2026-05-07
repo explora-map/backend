@@ -11,7 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,14 +38,15 @@ public class MapaServiceImpl implements MapaService {
         mapa.setLatitude(dto.getLatitude());
         mapa.setLonxitude(dto.getLonxitude());
         mapa.setNomeLocalizacion(dto.getNomeLocalizacion());
-        mapa.setCidade(dto.getCidade());
-        mapa.setRexion(dto.getRexion());
-        mapa.setPais(dto.getPais());
-        mapa.setCodigoPais(dto.getCodigoPais());
         mapa.setTipo(dto.getTipo());
         // Set creadoPor explicitly as a safety net for test contexts where
         // the SecurityContext may be empty and AuditorAware returns empty.
         mapa.setCreadoPor(username);
+        LocalizacionNominatim loc = resolverLocalizacion(mapa.getLatitude(), mapa.getLonxitude());
+        mapa.setCidade(loc.cidade());
+        mapa.setRexion(loc.rexion());
+        mapa.setPais(loc.pais());
+        mapa.setCodigoPais(loc.codigoPais());
         return toDTO(mapaRepository.save(mapa));
     }
 
@@ -72,22 +79,29 @@ public class MapaServiceImpl implements MapaService {
     @Transactional
     @Override
     public MapaResponseDTO editar(Long id, String username, MapaRequestDTO dto) {
-        Mapa mapa = mapaRepository.findById(id)
+        Mapa mapaExistente = mapaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + id));
-        if (!mapa.getCreadoPor().equals(username)) {
+        if (!mapaExistente.getCreadoPor().equals(username)) {
             throw new IllegalStateException("Sen permiso para editar este mapa");
         }
-        mapa.setNome(dto.getNome());
-        mapa.setDescricion(dto.getDescricion());
-        mapa.setLatitude(dto.getLatitude());
-        mapa.setLonxitude(dto.getLonxitude());
-        mapa.setNomeLocalizacion(dto.getNomeLocalizacion());
-        mapa.setCidade(dto.getCidade());
-        mapa.setRexion(dto.getRexion());
-        mapa.setPais(dto.getPais());
-        mapa.setCodigoPais(dto.getCodigoPais());
-        mapa.setTipo(dto.getTipo());
-        return toDTO(mapaRepository.save(mapa));
+        mapaExistente.setNome(dto.getNome());
+        mapaExistente.setDescricion(dto.getDescricion());
+        mapaExistente.setNomeLocalizacion(dto.getNomeLocalizacion());
+        mapaExistente.setTipo(dto.getTipo());
+        if (!Objects.equals(mapaExistente.getLatitude(), dto.getLatitude()) ||
+                !Objects.equals(mapaExistente.getLonxitude(), dto.getLonxitude())) {
+            mapaExistente.setLatitude(dto.getLatitude());
+            mapaExistente.setLonxitude(dto.getLonxitude());
+            LocalizacionNominatim loc = resolverLocalizacion(dto.getLatitude(), dto.getLonxitude());
+            mapaExistente.setCidade(loc.cidade());
+            mapaExistente.setRexion(loc.rexion());
+            mapaExistente.setPais(loc.pais());
+            mapaExistente.setCodigoPais(loc.codigoPais());
+        } else {
+            mapaExistente.setLatitude(dto.getLatitude());
+            mapaExistente.setLonxitude(dto.getLonxitude());
+        }
+        return toDTO(mapaRepository.save(mapaExistente));
     }
 
     @Transactional
@@ -129,6 +143,71 @@ public class MapaServiceImpl implements MapaService {
         }
         mapa.setTipo(tipo);
         return toDTO(mapaRepository.save(mapa));
+    }
+
+    private record LocalizacionNominatim(String cidade, String rexion, String pais, String codigoPais) {}
+
+    private LocalizacionNominatim resolverLocalizacion(double latitude, double lonxitude) {
+        try {
+            String url = String.format(
+                    "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=%s&lon=%s&accept-language=gl",
+                    latitude, lonxitude
+            ).replace(",", ".");
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(5))
+                    .header("User-Agent", "ExploraMap/1.0")
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = response.body();
+
+            String cidade = extraerCampoNominatim(body, new String[]{"\"city\"", "\"town\"", "\"village\"", "\"municipality\""});
+            String rexion = extraerValorJson(body, "\"state\"");
+            String pais = extraerValorJson(body, "\"country\"");
+            String codigoPais = extraerValorJson(body, "\"country_code\"");
+
+            if (codigoPais != null) codigoPais = codigoPais.toUpperCase();
+
+            return new LocalizacionNominatim(cidade, rexion, pais, codigoPais);
+
+        } catch (Exception e) {
+            return new LocalizacionNominatim(null, null, null, null);
+        }
+    }
+
+    // Extracts the first non-null value from a list of candidate keys within the "address" block
+    private String extraerCampoNominatim(String json, String[] chaves) {
+        for (String chave : chaves) {
+            String valor = extraerValorJson(json, chave);
+            if (valor != null && !valor.isBlank()) return valor;
+        }
+        return null;
+    }
+
+    // Extracts a JSON string value by key name (simple string parsing, no library needed)
+    private String extraerValorJson(String json, String chave) {
+        try {
+            int idx = json.indexOf(chave);
+            if (idx == -1) return null;
+            int colon = json.indexOf(":", idx);
+            if (colon == -1) return null;
+            int start = json.indexOf("\"", colon + 1);
+            if (start == -1) return null;
+            int end = json.indexOf("\"", start + 1);
+            if (end == -1) return null;
+            String valor = json.substring(start + 1, end);
+            return valor.isBlank() ? null : valor;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private MapaResponseDTO toDTO(Mapa m) {

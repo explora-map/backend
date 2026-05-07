@@ -44,6 +44,14 @@ public class Usuaria {
     @Enumerated(EnumType.STRING)
     private RolApp rol;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private String idioma = "gl";
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean verificada = false;
+
     @Column(nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime dataCreacion;
