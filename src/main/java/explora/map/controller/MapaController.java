@@ -29,6 +29,11 @@ public class MapaController {
         );
     }
 
+    @GetMapping("/colaboracións")
+    public ResponseEntity<List<MapaResponseDTO>> obterMapasColaboradora(Authentication auth) {
+        return ResponseEntity.ok(mapaService.obterMapasColaboradora(auth.getName()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<MapaResponseDTO> obterMapaPorId(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(mapaService.obterPorId(id, auth.getName()));

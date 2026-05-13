@@ -4,9 +4,12 @@ import explora.map.dto.ConviteRequestDTO;
 import explora.map.dto.ConviteResponseDTO;
 import explora.map.entity.Convite;
 import explora.map.entity.EstadoConvite;
+import explora.map.entity.MapaMembro;
 import explora.map.entity.Mapa;
+import explora.map.entity.RolMapa;
 import explora.map.entity.Usuaria;
 import explora.map.repository.ConviteRepository;
+import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import explora.map.repository.UsuariaRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class ConviteServiceImpl implements ConviteService {
     private final ConviteRepository conviteRepository;
     private final UsuariaRepository usuariaRepository;
     private final MapaRepository mapaRepository;
+    private final MapaMembroRepository mapaMembroRepository;
 
     @Transactional
     @Override
@@ -83,6 +87,16 @@ public class ConviteServiceImpl implements ConviteService {
         }
         convite.setEstado(EstadoConvite.ACEPTADO);
         conviteRepository.save(convite);
+
+        if (!mapaMembroRepository.existsByMapaIdAndUsuariaUsername(
+                convite.getMapa().getId(), convite.getConvidada().getUsername())) {
+            MapaMembro membro = MapaMembro.builder()
+                    .mapa(convite.getMapa())
+                    .usuaria(convite.getConvidada())
+                    .rol(RolMapa.COLABORADORA)
+                    .build();
+            mapaMembroRepository.save(membro);
+        }
     }
 
     @Transactional

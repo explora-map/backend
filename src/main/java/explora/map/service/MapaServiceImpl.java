@@ -6,6 +6,7 @@ import explora.map.entity.EstadoConvite;
 import explora.map.entity.Mapa;
 import explora.map.entity.TipoMapa;
 import explora.map.repository.ConviteRepository;
+import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class MapaServiceImpl implements MapaService {
 
     private final MapaRepository mapaRepository;
     private final ConviteRepository conviteRepository;
+    private final MapaMembroRepository mapaMembroRepository;
 
     @Transactional
     @Override
@@ -143,6 +145,15 @@ public class MapaServiceImpl implements MapaService {
         }
         mapa.setTipo(tipo);
         return toDTO(mapaRepository.save(mapa));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<MapaResponseDTO> obterMapasColaboradora(String username) {
+        return mapaMembroRepository.findAllByUsuariaUsername(username)
+                .stream()
+                .map(m -> toDTO(m.getMapa()))
+                .collect(Collectors.toList());
     }
 
     private record LocalizacionNominatim(String cidade, String rexion, String pais, String codigoPais) {}

@@ -1,9 +1,8 @@
 package explora.map.service;
 
-import explora.map.entity.EstadoConvite;
 import explora.map.entity.Mapa;
 import explora.map.entity.TipoMapa;
-import explora.map.repository.ConviteRepository;
+import explora.map.repository.MapaMembroRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +10,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MapaAccesoService {
 
-    private final ConviteRepository conviteRepository;
+    private final MapaMembroRepository mapaMembroRepository;
 
     public void verificar(Mapa mapa, String username) {
         if (mapa.getTipo() == TipoMapa.PUBLICO) {
@@ -20,11 +19,9 @@ public class MapaAccesoService {
         if (mapa.getCreadoPor().equals(username)) {
             return;
         }
-        boolean tenConviteAceptado = conviteRepository.findByMapaId(mapa.getId()).stream()
-                .anyMatch(c -> c.getEstado() == EstadoConvite.ACEPTADO
-                        && c.getConvidada().getUsername().equals(username));
-        if (!tenConviteAceptado) {
-            throw new IllegalStateException("Sen permiso para acceder a este mapa");
+        if (mapaMembroRepository.existsByMapaIdAndUsuariaUsername(mapa.getId(), username)) {
+            return;
         }
+        throw new IllegalStateException("Sen permiso para acceder a este mapa");
     }
 }

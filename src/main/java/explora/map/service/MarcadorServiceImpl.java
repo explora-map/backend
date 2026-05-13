@@ -23,6 +23,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     private final MapaRepository mapaRepository;
     private final CategoriaRepository categoriaRepository;
     private final MapaAccesoService mapaAccesoService;
+    private final MapaMembroService mapaMembroService;
 
     @Transactional(readOnly = true)
     @Override
@@ -39,7 +40,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public MarcadorResponseDTO crear(Long mapaId, MarcadorRequestDTO dto, String username) {
         Mapa mapa = mapaRepository.findById(mapaId)
                 .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        mapaAccesoService.verificar(mapa, username);
+        mapaMembroService.verificarPermisoEscritura(mapaId, username);
         Marcador marcador = new Marcador();
         marcador.setNome(dto.getNome());
         marcador.setDescricion(dto.getDescricion());
@@ -60,9 +61,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public MarcadorResponseDTO editar(Long id, MarcadorRequestDTO dto, String username) {
         Marcador marcador = marcadorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Marcador non atopado: " + id));
-        if (!marcador.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para editar este marcador");
-        }
+        mapaMembroService.verificarPermisoEscritura(marcador.getMapa().getId(), username);
         marcador.setNome(dto.getNome());
         marcador.setDescricion(dto.getDescricion());
         marcador.setLatitude(dto.getLatitude());
@@ -82,9 +81,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public void eliminar(Long id, String username) {
         Marcador marcador = marcadorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Marcador non atopado: " + id));
-        if (!marcador.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para eliminar este marcador");
-        }
+        mapaMembroService.verificarPermisoEscritura(marcador.getMapa().getId(), username);
         marcadorRepository.delete(marcador);
     }
 

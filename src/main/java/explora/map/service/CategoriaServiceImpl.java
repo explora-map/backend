@@ -22,6 +22,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final MapaRepository mapaRepository;
     private final MapaAccesoService mapaAccesoService;
     private final MarcadorRepository marcadorRepository;
+    private final MapaMembroService mapaMembroService;
 
     @Transactional(readOnly = true)
     @Override
@@ -38,7 +39,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public CategoriaResponseDTO crear(Long mapaId, CategoriaRequestDTO dto, String username) {
         Mapa mapa = mapaRepository.findById(mapaId)
                 .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        mapaAccesoService.verificar(mapa, username);
+        mapaMembroService.verificarPermisoEscritura(mapaId, username);
         Categoria categoria = new Categoria();
         categoria.setNome(dto.getNome());
         categoria.setCor(dto.getCor());
@@ -53,9 +54,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public CategoriaResponseDTO editar(Long id, CategoriaRequestDTO dto, String username) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + id));
-        if (!categoria.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para editar esta categoría");
-        }
+        mapaMembroService.verificarPermisoEscritura(categoria.getMapa().getId(), username);
         categoria.setNome(dto.getNome());
         categoria.setCor(dto.getCor());
         categoria.setIcona(dto.getIcona());
@@ -67,9 +66,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public void eliminar(Long id, String username) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + id));
-        if (!categoria.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para eliminar esta categoría");
-        }
+        mapaMembroService.verificarPermisoEscritura(categoria.getMapa().getId(), username);
         marcadorRepository.desasociarCategoria(id);
         categoriaRepository.delete(categoria);
     }

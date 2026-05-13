@@ -14,4 +14,5 @@ public interface MapaService {
     void eliminar(Long id, String username);
     List<MapaResponseDTO> obterPorTipoPublico(Double latitude, Double lonxitude, Double radio);
     MapaResponseDTO cambiarVisibilidade(Long id, String username, TipoMapa tipo);
+    List<MapaResponseDTO> obterMapasColaboradora(String username);
 }
