@@ -8,6 +8,7 @@ import explora.map.entity.TipoAccion;
 import explora.map.entity.TipoElemento;
 import explora.map.entity.TipoMapa;
 import explora.map.repository.ConviteRepository;
+import explora.map.repository.EntradaHistorialRepository;
 import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class MapaServiceImpl implements MapaService {
     private final ConviteRepository conviteRepository;
     private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
+    private final EntradaHistorialRepository historialRepository;
 
     @Transactional
     @Override
@@ -137,6 +139,7 @@ public class MapaServiceImpl implements MapaService {
         if (!mapa.getCreadoPor().equals(username)) {
             throw new IllegalStateException("Sen permiso para eliminar este mapa");
         }
+        historialRepository.deleteByMapaId(id);
         mapaRepository.delete(mapa);
     }
 
@@ -167,7 +170,17 @@ public class MapaServiceImpl implements MapaService {
             throw new IllegalStateException("Sen permiso para cambiar a visibilidade deste mapa");
         }
         mapa.setTipo(tipo);
-        return toDTO(mapaRepository.save(mapa));
+        Mapa gardado = mapaRepository.save(mapa);
+        historialService.rexistrar(
+                gardado,
+                username,
+                TipoAccion.EDITAR,
+                TipoElemento.MAPA,
+                gardado.getId(),
+                gardado.getNome(),
+                null
+        );
+        return toDTO(gardado);
     }
 
     @Transactional(readOnly = true)
