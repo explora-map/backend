@@ -4,6 +4,8 @@ import explora.map.dto.CategoriaRequestDTO;
 import explora.map.dto.CategoriaResponseDTO;
 import explora.map.entity.Categoria;
 import explora.map.entity.Mapa;
+import explora.map.entity.TipoAccion;
+import explora.map.entity.TipoElemento;
 import explora.map.repository.CategoriaRepository;
 import explora.map.repository.MapaRepository;
 import explora.map.repository.MarcadorRepository;
@@ -23,6 +25,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final MapaAccesoService mapaAccesoService;
     private final MarcadorRepository marcadorRepository;
     private final MapaMembroService mapaMembroService;
+    private final HistorialService historialService;
 
     @Transactional(readOnly = true)
     @Override
@@ -46,7 +49,17 @@ public class CategoriaServiceImpl implements CategoriaService {
         categoria.setIcona(dto.getIcona());
         categoria.setMapa(mapa);
         categoria.setCreadoPor(username);
-        return toDTO(categoriaRepository.save(categoria));
+        Categoria gardada = categoriaRepository.save(categoria);
+        historialService.rexistrar(
+                gardada.getMapa(),
+                username,
+                TipoAccion.CREAR,
+                TipoElemento.CATEGORIA,
+                gardada.getId(),
+                gardada.getNome(),
+                null
+        );
+        return toDTO(gardada);
     }
 
     @Transactional
@@ -58,7 +71,17 @@ public class CategoriaServiceImpl implements CategoriaService {
         categoria.setNome(dto.getNome());
         categoria.setCor(dto.getCor());
         categoria.setIcona(dto.getIcona());
-        return toDTO(categoriaRepository.save(categoria));
+        Categoria editada = categoriaRepository.save(categoria);
+        historialService.rexistrar(
+                editada.getMapa(),
+                username,
+                TipoAccion.EDITAR,
+                TipoElemento.CATEGORIA,
+                editada.getId(),
+                editada.getNome(),
+                null
+        );
+        return toDTO(editada);
     }
 
     @Transactional
@@ -67,6 +90,15 @@ public class CategoriaServiceImpl implements CategoriaService {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + id));
         mapaMembroService.verificarPermisoEscritura(categoria.getMapa().getId(), username);
+        historialService.rexistrar(
+                categoria.getMapa(),
+                username,
+                TipoAccion.ELIMINAR,
+                TipoElemento.CATEGORIA,
+                categoria.getId(),
+                categoria.getNome(),
+                null
+        );
         marcadorRepository.desasociarCategoria(id);
         categoriaRepository.delete(categoria);
     }

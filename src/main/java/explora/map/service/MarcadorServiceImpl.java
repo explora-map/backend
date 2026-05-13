@@ -5,6 +5,8 @@ import explora.map.dto.MarcadorResponseDTO;
 import explora.map.entity.Categoria;
 import explora.map.entity.Mapa;
 import explora.map.entity.Marcador;
+import explora.map.entity.TipoAccion;
+import explora.map.entity.TipoElemento;
 import explora.map.repository.CategoriaRepository;
 import explora.map.repository.MarcadorRepository;
 import explora.map.repository.MapaRepository;
@@ -24,6 +26,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     private final CategoriaRepository categoriaRepository;
     private final MapaAccesoService mapaAccesoService;
     private final MapaMembroService mapaMembroService;
+    private final HistorialService historialService;
 
     @Transactional(readOnly = true)
     @Override
@@ -53,7 +56,17 @@ public class MarcadorServiceImpl implements MarcadorService {
                     .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + dto.getCategoriaId()));
             marcador.setCategoria(categoria);
         }
-        return toDTO(marcadorRepository.save(marcador));
+        Marcador gardado = marcadorRepository.save(marcador);
+        historialService.rexistrar(
+                gardado.getMapa(),
+                username,
+                TipoAccion.CREAR,
+                TipoElemento.MARCADOR,
+                gardado.getId(),
+                gardado.getNome(),
+                null
+        );
+        return toDTO(gardado);
     }
 
     @Transactional
@@ -73,7 +86,17 @@ public class MarcadorServiceImpl implements MarcadorService {
         } else {
             marcador.setCategoria(null);
         }
-        return toDTO(marcadorRepository.save(marcador));
+        Marcador editado = marcadorRepository.save(marcador);
+        historialService.rexistrar(
+                editado.getMapa(),
+                username,
+                TipoAccion.EDITAR,
+                TipoElemento.MARCADOR,
+                editado.getId(),
+                editado.getNome(),
+                null
+        );
+        return toDTO(editado);
     }
 
     @Transactional
@@ -82,6 +105,15 @@ public class MarcadorServiceImpl implements MarcadorService {
         Marcador marcador = marcadorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Marcador non atopado: " + id));
         mapaMembroService.verificarPermisoEscritura(marcador.getMapa().getId(), username);
+        historialService.rexistrar(
+                marcador.getMapa(),
+                username,
+                TipoAccion.ELIMINAR,
+                TipoElemento.MARCADOR,
+                marcador.getId(),
+                marcador.getNome(),
+                null
+        );
         marcadorRepository.delete(marcador);
     }
 

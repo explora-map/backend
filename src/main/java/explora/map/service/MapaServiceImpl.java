@@ -4,6 +4,8 @@ import explora.map.dto.MapaRequestDTO;
 import explora.map.dto.MapaResponseDTO;
 import explora.map.entity.EstadoConvite;
 import explora.map.entity.Mapa;
+import explora.map.entity.TipoAccion;
+import explora.map.entity.TipoElemento;
 import explora.map.entity.TipoMapa;
 import explora.map.repository.ConviteRepository;
 import explora.map.repository.MapaMembroRepository;
@@ -30,6 +32,7 @@ public class MapaServiceImpl implements MapaService {
     private final MapaRepository mapaRepository;
     private final ConviteRepository conviteRepository;
     private final MapaMembroRepository mapaMembroRepository;
+    private final HistorialService historialService;
 
     @Transactional
     @Override
@@ -49,7 +52,17 @@ public class MapaServiceImpl implements MapaService {
         mapa.setRexion(loc.rexion());
         mapa.setPais(loc.pais());
         mapa.setCodigoPais(loc.codigoPais());
-        return toDTO(mapaRepository.save(mapa));
+        Mapa gardado = mapaRepository.save(mapa);
+        historialService.rexistrar(
+                gardado,
+                username,
+                TipoAccion.CREAR,
+                TipoElemento.MAPA,
+                gardado.getId(),
+                gardado.getNome(),
+                null
+        );
+        return toDTO(gardado);
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +116,17 @@ public class MapaServiceImpl implements MapaService {
             mapaExistente.setLatitude(dto.getLatitude());
             mapaExistente.setLonxitude(dto.getLonxitude());
         }
-        return toDTO(mapaRepository.save(mapaExistente));
+        Mapa editado = mapaRepository.save(mapaExistente);
+        historialService.rexistrar(
+                editado,
+                username,
+                TipoAccion.EDITAR,
+                TipoElemento.MAPA,
+                editado.getId(),
+                editado.getNome(),
+                null
+        );
+        return toDTO(editado);
     }
 
     @Transactional
