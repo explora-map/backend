@@ -4,9 +4,12 @@ import explora.map.dto.CategoriaRequestDTO;
 import explora.map.dto.CategoriaResponseDTO;
 import explora.map.entity.Categoria;
 import explora.map.entity.Mapa;
+import explora.map.entity.MapaMembro;
+import explora.map.entity.RolMapa;
 import explora.map.entity.TipoAccion;
 import explora.map.entity.TipoElemento;
 import explora.map.repository.CategoriaRepository;
+import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import explora.map.repository.MarcadorRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final MapaAccesoService mapaAccesoService;
     private final MarcadorRepository marcadorRepository;
     private final MapaMembroService mapaMembroService;
+    private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
 
     @Transactional(readOnly = true)
@@ -67,7 +72,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public CategoriaResponseDTO editar(Long id, CategoriaRequestDTO dto, String username) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + id));
-        mapaMembroService.verificarPermisoEscritura(categoria.getMapa().getId(), username);
+        verificarPermisosEdicion(categoria.getMapa(), categoria.getCreadoPor(), username);
         categoria.setNome(dto.getNome());
         categoria.setCor(dto.getCor());
         categoria.setIcona(dto.getIcona());
@@ -89,7 +94,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public void eliminar(Long id, String username) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Categoría non atopada: " + id));
-        mapaMembroService.verificarPermisoEscritura(categoria.getMapa().getId(), username);
+        verificarPermisosEdicion(categoria.getMapa(), categoria.getCreadoPor(), username);
         historialService.rexistrar(
                 categoria.getMapa(),
                 username,
@@ -101,6 +106,27 @@ public class CategoriaServiceImpl implements CategoriaService {
         );
         marcadorRepository.desasociarCategoria(id);
         categoriaRepository.delete(categoria);
+    }
+
+    private void verificarPermisosEdicion(Mapa mapa, String creadoPorElemento, String username) {
+        if (mapa.getCreadoPor().equals(username)) return;
+
+        Optional<MapaMembro> membro = mapaMembroRepository
+                .findByMapaIdAndUsuariaUsername(mapa.getId(), username);
+
+        if (membro.isEmpty()) {
+            throw new IllegalStateException("Sen permisos para modificar este elemento");
+        }
+
+        RolMapa rol = membro.get().getRol();
+
+        if (rol == RolMapa.MEMBRO) {
+            throw new IllegalStateException("Os membros non poden modificar elementos do mapa");
+        }
+
+        if (rol == RolMapa.COLABORADORA && !creadoPorElemento.equals(username)) {
+            throw new IllegalStateException("Os colaboradores só poden modificar os seus propios elementos");
+        }
     }
 
     private CategoriaResponseDTO toDTO(Categoria c) {

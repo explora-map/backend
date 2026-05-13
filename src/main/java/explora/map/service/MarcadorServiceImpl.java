@@ -4,17 +4,21 @@ import explora.map.dto.MarcadorRequestDTO;
 import explora.map.dto.MarcadorResponseDTO;
 import explora.map.entity.Categoria;
 import explora.map.entity.Mapa;
+import explora.map.entity.MapaMembro;
 import explora.map.entity.Marcador;
+import explora.map.entity.RolMapa;
 import explora.map.entity.TipoAccion;
 import explora.map.entity.TipoElemento;
 import explora.map.repository.CategoriaRepository;
 import explora.map.repository.MarcadorRepository;
+import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     private final CategoriaRepository categoriaRepository;
     private final MapaAccesoService mapaAccesoService;
     private final MapaMembroService mapaMembroService;
+    private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
 
     @Transactional(readOnly = true)
@@ -74,7 +79,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public MarcadorResponseDTO editar(Long id, MarcadorRequestDTO dto, String username) {
         Marcador marcador = marcadorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Marcador non atopado: " + id));
-        mapaMembroService.verificarPermisoEscritura(marcador.getMapa().getId(), username);
+        verificarPermisosEdicion(marcador.getMapa(), marcador.getCreadoPor(), username);
         marcador.setNome(dto.getNome());
         marcador.setDescricion(dto.getDescricion());
         marcador.setLatitude(dto.getLatitude());
@@ -104,7 +109,7 @@ public class MarcadorServiceImpl implements MarcadorService {
     public void eliminar(Long id, String username) {
         Marcador marcador = marcadorRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Marcador non atopado: " + id));
-        mapaMembroService.verificarPermisoEscritura(marcador.getMapa().getId(), username);
+        verificarPermisosEdicion(marcador.getMapa(), marcador.getCreadoPor(), username);
         historialService.rexistrar(
                 marcador.getMapa(),
                 username,
@@ -115,6 +120,28 @@ public class MarcadorServiceImpl implements MarcadorService {
                 null
         );
         marcadorRepository.delete(marcador);
+    }
+
+    private void verificarPermisosEdicion(Mapa mapa, String creadoPorElemento, String username) {
+        if (mapa.getCreadoPor().equals(username)) return;
+
+        Optional<MapaMembro> membro = mapaMembroRepository
+                .findByMapaIdAndUsuariaUsername(mapa.getId(), username);
+
+        if (membro.isEmpty()) {
+            throw new IllegalStateException("Sen permisos para modificar este elemento");
+        }
+
+        RolMapa rol = membro.get().getRol();
+
+        if (rol == RolMapa.MEMBRO) {
+            throw new IllegalStateException("Os membros non poden modificar elementos do mapa");
+        }
+
+        if (rol == RolMapa.COLABORADORA && !creadoPorElemento.equals(username)) {
+            throw new IllegalStateException("Os colaboradores só poden modificar os seus propios elementos");
+        }
+        // ADMIN_MAPA pode modificar calquera elemento
     }
 
     private MarcadorResponseDTO toDTO(Marcador m) {

@@ -1,5 +1,6 @@
 package explora.map.dto;
 
+import explora.map.entity.RolMapa;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -13,4 +14,5 @@ public class ConviteRequestDTO {
     private Long mapaId;
     @NotBlank
     private String usernameConvidada;
+    private RolMapa rol;
 }

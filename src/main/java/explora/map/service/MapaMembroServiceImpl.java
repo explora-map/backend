@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,11 +35,7 @@ public class MapaMembroServiceImpl implements MapaMembroService {
     @Transactional
     @Override
     public MapaMembroResponseDTO cambiarRol(Long mapaId, String usernameObxectivo, RolMapa novoRol, String username) {
-        Mapa mapa = mapaRepository.findById(mapaId)
-                .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        if (!mapa.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para cambiar roles neste mapa");
-        }
+        verificarPermisoXestion(mapaId, username);
         MapaMembro membro = mapaMembroRepository.findByMapaIdAndUsuariaUsername(mapaId, usernameObxectivo)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Membro non atopado no mapa: " + usernameObxectivo));
@@ -49,11 +46,7 @@ public class MapaMembroServiceImpl implements MapaMembroService {
     @Transactional
     @Override
     public void eliminarMembro(Long mapaId, String usernameObxectivo, String username) {
-        Mapa mapa = mapaRepository.findById(mapaId)
-                .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado: " + mapaId));
-        if (!mapa.getCreadoPor().equals(username)) {
-            throw new IllegalStateException("Sen permiso para eliminar membros deste mapa");
-        }
+        verificarPermisoXestion(mapaId, username);
         if (usernameObxectivo.equals(username)) {
             throw new IllegalArgumentException("O propietario non se pode eliminar a si mesmo como membro");
         }
@@ -72,6 +65,20 @@ public class MapaMembroServiceImpl implements MapaMembroService {
                 .orElse(false);
         if (!tenPermiso) {
             throw new IllegalStateException("Sen permiso de edición neste mapa");
+        }
+    }
+
+    private void verificarPermisoXestion(Long mapaId, String username) {
+        Mapa mapa = mapaRepository.findById(mapaId)
+                .orElseThrow(() -> new IllegalArgumentException("Mapa non atopado"));
+
+        if (mapa.getCreadoPor().equals(username)) return;
+
+        Optional<MapaMembro> membro = mapaMembroRepository
+                .findByMapaIdAndUsuariaUsername(mapaId, username);
+
+        if (membro.isEmpty() || membro.get().getRol() != RolMapa.ADMIN_MAPA) {
+            throw new IllegalStateException("Sen permisos para xestionar membros deste mapa");
         }
     }
 

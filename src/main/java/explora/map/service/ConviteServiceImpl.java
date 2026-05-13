@@ -7,6 +7,7 @@ import explora.map.entity.EstadoConvite;
 import explora.map.entity.MapaMembro;
 import explora.map.entity.Mapa;
 import explora.map.entity.RolMapa;
+import explora.map.entity.TipoMapa;
 import explora.map.entity.Usuaria;
 import explora.map.repository.ConviteRepository;
 import explora.map.repository.MapaMembroRepository;
@@ -50,12 +51,17 @@ public class ConviteServiceImpl implements ConviteService {
             throw new IllegalStateException("Non podes convidar a un mapa que non che pertence");
         }
 
+        RolMapa rolFinal = dto.getRol() != null
+                ? dto.getRol()
+                : (mapa.getTipo() == TipoMapa.PRIVADO ? RolMapa.MEMBRO : RolMapa.COLABORADORA);
+
         Convite convite = new Convite();
         convite.setAnfitrioa(anfitrioa);
         convite.setConvidada(convidada);
         convite.setMapa(mapa);
         convite.setToken(UUID.randomUUID());
         convite.setEstado(EstadoConvite.PENDENTE);
+        convite.setRol(rolFinal);
         convite.setDataExpiracion(LocalDateTime.now().plusDays(7));
 
         return toDTO(conviteRepository.save(convite));
@@ -93,7 +99,7 @@ public class ConviteServiceImpl implements ConviteService {
             MapaMembro membro = MapaMembro.builder()
                     .mapa(convite.getMapa())
                     .usuaria(convite.getConvidada())
-                    .rol(RolMapa.COLABORADORA)
+                    .rol(convite.getRol())
                     .build();
             mapaMembroRepository.save(membro);
         }

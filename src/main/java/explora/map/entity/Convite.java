@@ -56,6 +56,10 @@ public class Convite {
     @Enumerated(EnumType.STRING)
     private EstadoConvite estado;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private RolMapa rol;
+
     @Column(nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime dataCreacion;
