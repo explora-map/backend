@@ -28,4 +28,10 @@ public class PerfilController {
     ) {
         return ResponseEntity.ok(perfilService.actualizarPerfil(authentication.getName(), dto));
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> eliminarConta(Authentication authentication) {
+        perfilService.eliminar(authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

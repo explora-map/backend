@@ -12,4 +12,5 @@ public interface MapaMembroRepository extends JpaRepository<MapaMembro, Long> {
     List<MapaMembro> findAllByUsuariaUsername(String username);
     boolean existsByMapaIdAndUsuariaUsername(Long mapaId, String username);
     void deleteByMapaIdAndUsuariaUsername(Long mapaId, String username);
+    void deleteAllByUsuariaUsername(String username);
 }
