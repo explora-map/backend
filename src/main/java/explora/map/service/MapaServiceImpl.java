@@ -1,5 +1,6 @@
 package explora.map.service;
 
+import explora.map.dto.MapaColaboracionResponseDTO;
 import explora.map.dto.MapaRequestDTO;
 import explora.map.dto.MapaResponseDTO;
 import explora.map.entity.EstadoConvite;
@@ -185,10 +186,29 @@ public class MapaServiceImpl implements MapaService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<MapaResponseDTO> obterMapasColaboradora(String username) {
+    public List<MapaColaboracionResponseDTO> obterMapasColaboradora(String username) {
         return mapaMembroRepository.findAllByUsuariaUsername(username)
                 .stream()
-                .map(m -> toDTO(m.getMapa()))
+                .map(m -> {
+                    Mapa mapa = m.getMapa();
+                    MapaColaboracionResponseDTO dto = new MapaColaboracionResponseDTO(
+                            mapa.getId(),
+                            mapa.getNome(),
+                            mapa.getDescricion(),
+                            mapa.getLatitude(),
+                            mapa.getLonxitude(),
+                            mapa.getNomeLocalizacion(),
+                            mapa.getTipo(),
+                            mapa.getCreadoPor(),
+                            mapa.getDataCreacion(),
+                            mapa.getCidade(),
+                            mapa.getRexion(),
+                            mapa.getPais(),
+                            mapa.getCodigoPais(),
+                            m.getRol().name()
+                    );
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

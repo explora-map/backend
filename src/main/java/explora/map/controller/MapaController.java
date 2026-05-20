@@ -1,5 +1,6 @@
 package explora.map.controller;
 
+import explora.map.dto.MapaColaboracionResponseDTO;
 import explora.map.dto.MapaResponseDTO;
 import explora.map.dto.MapaRequestDTO;
 import explora.map.entity.TipoMapa;
@@ -30,7 +31,7 @@ public class MapaController {
     }
 
     @GetMapping("/colaboracións")
-    public ResponseEntity<List<MapaResponseDTO>> obterMapasColaboradora(Authentication auth) {
+    public ResponseEntity<List<MapaColaboracionResponseDTO>> obterMapasColaboradora(Authentication auth) {
         return ResponseEntity.ok(mapaService.obterMapasColaboradora(auth.getName()));
     }
 
