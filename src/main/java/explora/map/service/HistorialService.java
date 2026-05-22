@@ -1,6 +1,6 @@
 package explora.map.service;
 
-import explora.map.dto.EntradaHistorialResponseDTO;
+import explora.map.dto.HistorialResponseDTO;
 import explora.map.entity.Mapa;
 import explora.map.entity.TipoAccion;
 import explora.map.entity.TipoElemento;
@@ -11,9 +11,9 @@ public interface HistorialService {
 
     void rexistrar(Mapa mapa, String usuaria, TipoAccion accion, TipoElemento elemento, Long elementoId, String elementoNome, String detalle);
 
-    List<EntradaHistorialResponseDTO> listarPorMapa(Long mapaId, String username);
+    List<HistorialResponseDTO> listarPorMapa(Long mapaId, String username);
 
-    List<EntradaHistorialResponseDTO> listarPorMapaETipo(Long mapaId, TipoElemento tipo, String username);
+    List<HistorialResponseDTO> listarPorMapaETipo(Long mapaId, TipoElemento tipo, String username);
 
-    List<EntradaHistorialResponseDTO> listarPorMapaEUsuaria(Long mapaId, String usuariaFiltro, String username);
+    List<HistorialResponseDTO> listarPorMapaEUsuaria(Long mapaId, String usuariaFiltro, String username);
 }

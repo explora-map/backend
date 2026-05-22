@@ -27,4 +27,15 @@ public class MarcadorController {
     public ResponseEntity<MarcadorResponseDTO> crear(@PathVariable Long mapaId, @Valid @RequestBody MarcadorRequestDTO dto, Authentication auth) {
         return ResponseEntity.status(201).body(marcadorService.crear(mapaId, dto, auth.getName()));
     }
+
+    @PutMapping("/api/marcadores/{id}")
+    public ResponseEntity<MarcadorResponseDTO> editar(@PathVariable Long id, @Valid @RequestBody MarcadorRequestDTO dto, Authentication auth) {
+        return ResponseEntity.ok(marcadorService.editar(id, dto, auth.getName()));
+    }
+
+    @DeleteMapping("/api/marcadores/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication auth) {
+        marcadorService.eliminar(id, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

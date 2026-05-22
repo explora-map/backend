@@ -1,6 +1,6 @@
 package explora.map.controller;
 
-import explora.map.dto.EntradaHistorialResponseDTO;
+import explora.map.dto.HistorialResponseDTO;
 import explora.map.entity.TipoElemento;
 import explora.map.service.HistorialService;
 import lombok.RequiredArgsConstructor;

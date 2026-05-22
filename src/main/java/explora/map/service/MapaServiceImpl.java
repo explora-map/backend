@@ -9,7 +9,7 @@ import explora.map.entity.TipoAccion;
 import explora.map.entity.TipoElemento;
 import explora.map.entity.TipoMapa;
 import explora.map.repository.ConviteRepository;
-import explora.map.repository.EntradaHistorialRepository;
+import explora.map.repository.HistorialRepository;
 import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class MapaServiceImpl implements MapaService {
     private final ConviteRepository conviteRepository;
     private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
-    private final EntradaHistorialRepository historialRepository;
+    private final HistorialRepository historialRepository;
 
     @Transactional
     @Override

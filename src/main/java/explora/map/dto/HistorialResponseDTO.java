@@ -1,6 +1,6 @@
 package explora.map.dto;
 
-import explora.map.entity.EntradaHistorial;
+import explora.map.entity.Historial;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EntradaHistorialResponseDTO {
+public class HistorialResponseDTO {
 
     private Long id;
     private String usuaria;
@@ -21,8 +21,8 @@ public class EntradaHistorialResponseDTO {
     private String detalle;
     private LocalDateTime dataAccion;
 
-    public static EntradaHistorialResponseDTO fromEntity(EntradaHistorial e) {
-        return EntradaHistorialResponseDTO.builder()
+    public static HistorialResponseDTO fromEntity(Historial e) {
+        return HistorialResponseDTO.builder()
                 .id(e.getId())
                 .usuaria(e.getUsuaria())
                 .tipoAccion(e.getTipoAccion().name())

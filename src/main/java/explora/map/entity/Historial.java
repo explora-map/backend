@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EntradaHistorial {
+public class Historial {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
