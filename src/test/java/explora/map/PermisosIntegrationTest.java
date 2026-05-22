@@ -1,5 +1,7 @@
 package explora.map;
 
+import explora.map.entity.Convite;
+import explora.map.entity.EstadoConvite;
 import explora.map.entity.Mapa;
 import explora.map.entity.MapaMembro;
 import explora.map.entity.Marcador;
@@ -7,6 +9,7 @@ import explora.map.entity.RolApp;
 import explora.map.entity.RolMapa;
 import explora.map.entity.TipoMapa;
 import explora.map.entity.Usuaria;
+import explora.map.repository.ConviteRepository;
 import explora.map.repository.MapaMembroRepository;
 import explora.map.repository.MapaRepository;
 import explora.map.repository.MarcadorRepository;
@@ -28,11 +31,18 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
+import org.hamcrest.Matchers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -63,6 +73,9 @@ class PermisosIntegrationTest {
 
     @Autowired
     private MapaMembroRepository mapaMembroRepository;
+
+    @Autowired
+    private ConviteRepository conviteRepository;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -284,5 +297,265 @@ class PermisosIntegrationTest {
         mockMvc.perform(delete("/api/mapas/api/marcadores/" + marcadorDeColaboradora.getId())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
+    }
+
+    // ─── TEST 6 ────────────────────────────────────────────────────────────────
+
+    /**
+     * Unha petición a un endpoint protexido sen cabeceira Authorization
+     * debe devolver 401 Unauthorized (AuthEntryPointJwt actúa como punto de entrada).
+     */
+    @Test
+    void requestSenJwtAEndpointProtexido_retorna401() throws Exception {
+        mockMvc.perform(get("/api/mapas/" + mapa.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ─── TEST 7 ────────────────────────────────────────────────────────────────
+
+    /**
+     * Unha petición con un JWT manipulado (sinatura inválida) debe devolver 401 Unauthorized.
+     * O filtro AuthTokenFilter rexeita o token e non establece o contexto de seguranza,
+     * polo que Spring Security deniega o acceso ao recurso protexido.
+     */
+    @Test
+    void jwtManipulado_retorna401() throws Exception {
+        // Token con estrutura JWT válida pero sinatura incorrecta
+        String tokenInvalido = "eyJhbGciOiJIUzI1NiJ9.invalido.invalido";
+
+        mockMvc.perform(get("/api/mapas/" + mapa.getId())
+                        .header("Authorization", "Bearer " + tokenInvalido))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ─── TEST 8 ────────────────────────────────────────────────────────────────
+
+    /**
+     * Un intento de login con contrasinal incorrecto debe devolver 401 Unauthorized.
+     * AuthServiceImpl captura a AuthenticationException e relánzaa como BadCredentialsException,
+     * que GlobalExceptionHandler mapea a 401.
+     *
+     * Nota: o campo do DTO é "password" (non "contrasinal"), axustado ao LoginRequestDTO real.
+     */
+    @Test
+    void loginConCredenciaisIncorrectas_retorna401() throws Exception {
+        mockMvc.perform(post("/api/auth/entrar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"propietaria\",\"password\":\"contrasinalErroneo\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ─── TEST 9 ────────────────────────────────────────────────────────────────
+
+    /**
+     * Un intento de login cunha conta existente pero non verificada debe devolver 403 Forbidden.
+     * AuthServiceImpl autentica as credenciais correctamente e despois comproba isVerificada();
+     * se é false, lanza IllegalStateException, que GlobalExceptionHandler mapea a 403.
+     *
+     * Nota: o campo do DTO é "password" (non "contrasinal"), axustado ao LoginRequestDTO real.
+     */
+    @Test
+    void loginConContaNonVerificada_retorna403() throws Exception {
+        // Crear usuaria con verificada=false directamente no repositorio
+        usuariaRepository.save(Usuaria.builder()
+                .nome("Non Verificada Test")
+                .username("nonverificada")
+                .correo("nonverificada@test.com")
+                .hashPassword(passwordEncoder.encode("password123"))
+                .rol(RolApp.USER)
+                .verificada(false)
+                .build());
+
+        mockMvc.perform(post("/api/auth/entrar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"nonverificada\",\"password\":\"password123\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ─── TEST 10 ───────────────────────────────────────────────────────────────
+
+    /**
+     * A propietaria (creadora do mapa) pode crear categorías:
+     * o servidor debe devolver 201 Created.
+     *
+     * CategoriaServiceImpl.crear() delega en mapaMembroService.verificarPermisoEscritura(),
+     * que permite o acceso ao creador do mapa sen necesidade de entrada en MapaMembro.
+     */
+    @Test
+    void propietariaCriaCategoria_retorna201() throws Exception {
+        String token = jwtUtils.generateTokenFromUsername("propietaria");
+
+        mockMvc.perform(post("/api/mapas/" + mapa.getId() + "/categorias")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Restaurantes\",\"cor\":\"#FF5733\",\"icona\":\"fork\"}"))
+                .andExpect(status().isCreated());
+    }
+
+    // ─── TEST 11 ───────────────────────────────────────────────────────────────
+
+    /**
+     * A propietaria pode listar os marcadores do seu mapa:
+     * o servidor debe devolver 200 OK cunha lista que contén polo menos 1 elemento
+     * (o marcador de colaboradora1 creado en @BeforeEach).
+     */
+    @Test
+    void propietariaListaMarcadores_retorna200EListaCorrecta() throws Exception {
+        String token = jwtUtils.generateTokenFromUsername("propietaria");
+
+        mockMvc.perform(get("/api/mapas/" + mapa.getId() + "/marcadores")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(Matchers.greaterThanOrEqualTo(1)));
+    }
+
+    // ─── TEST 12 ───────────────────────────────────────────────────────────────
+
+    /**
+     * A propietaria pode editar o seu propio mapa:
+     * o servidor debe devolver 200 OK.
+     *
+     * Nota: MapaRequestDTO require os campos nome, latitude, lonxitude,
+     * nomeLocalizacion e tipo (todos @NotNull/@NotBlank). As coordenadas
+     * son iguais ás orixinais para evitar a chamada HTTP a Nominatim
+     * (MapaServiceImpl só a fai cando as coordenadas cambian).
+     */
+    @Test
+    void propietariaEditaSeuMapa_retorna200() throws Exception {
+        String token = jwtUtils.generateTokenFromUsername("propietaria");
+
+        mockMvc.perform(put("/api/mapas/editar/" + mapa.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Mapa Editado\",\"descricion\":\"Nova descricion\"," +
+                                 "\"latitude\":42.0,\"lonxitude\":-8.0," +
+                                 "\"nomeLocalizacion\":\"Vigo, Galicia\",\"tipo\":\"PRIVADO\"}"))
+                .andExpect(status().isOk());
+    }
+
+    // ─── TEST 13 ───────────────────────────────────────────────────────────────
+
+    /**
+     * Ao eliminar un mapa, os seus marcadores tamén desaparecen en cascada.
+     * Verificamos o cascade comprobando que o mapa xa non existe (404) ao intentar
+     * listar os seus marcadores, o que é máis robusto que acceder ao marcador directamente.
+     *
+     * Fluxo:
+     *   1. DELETE /api/mapas/eliminar/{mapaId}     → 204 No Content
+     *   2. GET    /api/mapas/{mapaId}/marcadores   → 404 Not Found (mapa eliminado)
+     */
+    @Test
+    void eliminarMapaEliminaMarcadoresEnCascada_retorna204e404() throws Exception {
+        // Gardar o id do marcador creado en @BeforeEach antes de eliminar o mapa
+        Long idMarcadorDeColaboradora = marcadorDeColaboradora.getId();
+
+        String token = jwtUtils.generateTokenFromUsername("propietaria");
+
+        // Paso 1: eliminar o mapa → 204
+        mockMvc.perform(delete("/api/mapas/eliminar/" + mapa.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        // Paso 2: tentar listar marcadores do mapa eliminado → 404
+        // MarcadorServiceImpl.listarPorMapa() lanza IllegalArgumentException ao non atopar o mapa,
+        // que GlobalExceptionHandler converte en 404.
+        mockMvc.perform(get("/api/mapas/" + mapa.getId() + "/marcadores")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    // ─── TEST 14 ───────────────────────────────────────────────────────────────
+
+    /**
+     * Un ADMIN_MAPA pode editar calquera marcador do mapa, incluídos os alleos.
+     * Contrasta con TEST 4: a COLABORADORA só pode editar os seus propios marcadores.
+     *
+     * MarcadorServiceImpl.verificarPermisosEdicion(): rol == ADMIN_MAPA pasa sen restrición
+     * de autoría, a diferenza de COLABORADORA que require creadoPor == username.
+     *
+     * Nota: a URL real é /api/mapas/api/marcadores/{id} (ver comentario en TEST 4).
+     */
+    @Test
+    void adminMapaEditaMarcadorAlleo_retorna200() throws Exception {
+        // Crear usuaria "adminmapa" e engadila ao mapa con rol ADMIN_MAPA
+        Usuaria adminmapa = usuariaRepository.save(Usuaria.builder()
+                .nome("Admin Mapa Test")
+                .username("adminmapa")
+                .correo("adminmapa@test.com")
+                .hashPassword(passwordEncoder.encode("password123"))
+                .rol(RolApp.USER)
+                .verificada(true)
+                .build());
+
+        mapaMembroRepository.save(MapaMembro.builder()
+                .mapa(mapa)
+                .usuaria(adminmapa)
+                .rol(RolMapa.ADMIN_MAPA)
+                .build());
+
+        String token = jwtUtils.generateTokenFromUsername("adminmapa");
+
+        // O marcador a editar pertence a "colaboradora1" (alleo a adminmapa)
+        mockMvc.perform(put("/api/mapas/api/marcadores/" + marcadorDeColaboradora.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Editado por admin\",\"latitude\":42.1,\"lonxitude\":-8.1}"))
+                .andExpect(status().isOk());
+    }
+
+    // ─── TEST 15 ───────────────────────────────────────────────────────────────
+
+    /**
+     * Fluxo completo de invitación:
+     *   1. "convidada" non pode acceder ao mapa privado antes de aceptar o convite → 403
+     *   2. "convidada" acepta o convite → 204 (ConviteController devolve noContent)
+     *   3. "convidada" pode acceder ao mapa tras o convite aceptado → 200
+     *
+     * MapaServiceImpl.obterPorId() permite o acceso cando existe un convite con
+     * estado ACEPTADO para a usuaria solicitante, independentemente de MapaMembro.
+     * ConviteServiceImpl.aceptar() cambia o estado a ACEPTADO e crea tamén
+     * unha entrada en MapaMembro.
+     */
+    @Test
+    void usuariaAceptaConviteEAccedeAoMapa_fluxoCompleto() throws Exception {
+        // Crear a usuaria "convidada"
+        Usuaria convidada = usuariaRepository.save(Usuaria.builder()
+                .nome("Convidada Test")
+                .username("convidada")
+                .correo("convidada@test.com")
+                .hashPassword(passwordEncoder.encode("password123"))
+                .rol(RolApp.USER)
+                .verificada(true)
+                .build());
+
+        // Crear o convite directamente no repositorio (estado PENDENTE)
+        UUID tokenConvite = UUID.randomUUID();
+        conviteRepository.save(Convite.builder()
+                .anfitrioa(propietaria)
+                .convidada(convidada)
+                .mapa(mapa)
+                .token(tokenConvite)
+                .estado(EstadoConvite.PENDENTE)
+                .rol(RolMapa.MEMBRO)
+                .dataExpiracion(LocalDateTime.now().plusDays(1))
+                .build());
+
+        String tokenConvidada = jwtUtils.generateTokenFromUsername("convidada");
+
+        // Paso 1: "convidada" non pode acceder ao mapa privado con convite PENDENTE → 403
+        mockMvc.perform(get("/api/mapas/" + mapa.getId())
+                        .header("Authorization", "Bearer " + tokenConvidada))
+                .andExpect(status().isForbidden());
+
+        // Paso 2: "convidada" acepta o convite → ConviteController devolve 204 (noContent)
+        mockMvc.perform(patch("/api/convites/" + tokenConvite + "/aceptar")
+                        .header("Authorization", "Bearer " + tokenConvidada))
+                .andExpect(status().isNoContent());
+
+        // Paso 3: "convidada" pode acceder ao mapa tras o convite ACEPTADO → 200
+        mockMvc.perform(get("/api/mapas/" + mapa.getId())
+                        .header("Authorization", "Bearer " + tokenConvidada))
+                .andExpect(status().isOk());
     }
 }
