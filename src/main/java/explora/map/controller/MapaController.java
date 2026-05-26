@@ -106,8 +106,11 @@ public class MapaController {
         @ApiResponse(responseCode = "401", description = "Non autenticada")
     })
     @GetMapping("/publicos")
-    public ResponseEntity<List<MapaResponseDTO>> obterPorTipoPublico(@RequestParam Double latitude, @RequestParam Double lonxitude, @RequestParam(defaultValue = "5") Double radio) {
-        return ResponseEntity.ok(mapaService.obterPorTipoPublico(latitude, lonxitude, radio));
+    public ResponseEntity<List<MapaResponseDTO>> obterPorTipoPublico(
+            @RequestParam Double lat,
+            @RequestParam Double lon,
+            @RequestParam(defaultValue = "10") Double radius) {
+        return ResponseEntity.ok(mapaService.obterPorTipoPublico(lat, lon, radius));
     }
 
     @Operation(summary = "Cambiar a visibilidade dun mapa entre PUBLICO e PRIVADO")

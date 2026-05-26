@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
  * <ul>
  *   <li>{@code POST /rexistro} — rexistro dunha nova conta.</li>
  *   <li>{@code POST /entrar}   — inicio de sesión con credenciais.</li>
- *   <li>{@code POST /refresh}  — renovación do access token mediante refresh token.</li>
- *   <li>{@code POST /logout}   — peche de sesión e invalidación do refresh token.</li>
+ *   <li>{@code POST /renovar}  — renovación do access token mediante refresh token.</li>
+ *   <li>{@code POST /pechar}   — peche de sesión e invalidación do refresh token.</li>
  * </ul>
  *
  * <p>Todos os erros de permisos e credenciais son xestionados polo
@@ -105,7 +105,7 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "Novo par de tokens emitido correctamente"),
         @ApiResponse(responseCode = "401", description = "Refresh token inválido ou expirado")
     })
-    @PostMapping("/refresh")
+    @PostMapping("/renovar")
     public ResponseEntity<JwtResponseDTO> refresh(@Valid @RequestBody RefreshTokenRequestDTO request) {
         return ResponseEntity.ok(refreshTokenService.refresh(request));
     }
@@ -126,7 +126,7 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "Sesión pechada correctamente"),
         @ApiResponse(responseCode = "400", description = "Corpo da petición inválido")
     })
-    @PostMapping("/logout")
+    @PostMapping("/pechar")
     public ResponseEntity<?> logout(@Valid @RequestBody RefreshTokenRequestDTO request) {
         authService.sair(request);
         return ResponseEntity.ok("Sesión pechada correctaente");
