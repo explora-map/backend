@@ -19,6 +19,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Implementación de {@link PerfilService} que xestiona o perfil das usuarias.
+ *
+ * <p>Responsabilidades principais:</p>
+ * <ul>
+ *   <li>Consulta e actualización dos datos persoais da usuaria autenticada.</li>
+ *   <li>Eliminación completa da conta: tokens, mapas gardados, membresías,
+ *       convites e mapas propios en cascada.</li>
+ * </ul>
+ */
 @Service
 @RequiredArgsConstructor
 public class PerfilServiceImpl implements PerfilService {
@@ -33,6 +43,14 @@ public class PerfilServiceImpl implements PerfilService {
     private final MapaRepository mapaRepository;
     private final MapaService mapaService;
 
+    /**
+     * Obtén os datos do perfil da usuaria autenticada.
+     *
+     * @param username nome da usuaria cuio perfil se solicita
+     * @return DTO co perfil da usuaria (nome, username, correo, rol, idioma e data de creación)
+     * @throws org.springframework.security.core.userdetails.UsernameNotFoundException
+     *         se non existe ningunha usuaria co username indicado
+     */
     @Override
     public PerfilResponseDTO obterPerfil(String username) {
         Usuaria usuaria = usuariaRepository.findByUsername(username)
@@ -40,6 +58,22 @@ public class PerfilServiceImpl implements PerfilService {
         return mapearAResponse(usuaria);
     }
 
+    /**
+     * Actualiza os datos do perfil da usuaria autenticada.
+     *
+     * <p>Só se modifican os campos presentes e non baleiros no DTO.
+     * O contrasinal gárdase sempre cifrado con BCrypt.
+     * O idioma só se acepta se é {@code "gl"} ou {@code "en"}.</p>
+     *
+     * @param username nome actual da usuaria que realiza a actualización
+     * @param dto      datos a actualizar (nome, username, correo, contrasinal, idioma);
+     *                 os campos {@code null} ou baleiros ignóranse
+     * @return DTO co perfil actualizado
+     * @throws org.springframework.security.core.userdetails.UsernameNotFoundException
+     *         se non existe ningunha usuaria co username indicado
+     * @throws IllegalArgumentException se o novo username ou correo xa está en uso
+     *                                  por outra usuaria
+     */
     @Override
     @Transactional
     public PerfilResponseDTO actualizarPerfil(String username, PerfilRequestDTO dto) {
@@ -79,6 +113,24 @@ public class PerfilServiceImpl implements PerfilService {
         return mapearAResponse(usuaria);
     }
 
+    /**
+     * Elimina de forma permanente a conta da usuaria e todos os seus datos asociados.
+     *
+     * <p>A eliminación realízase na seguinte orde para respectar as restricións
+     * de integridade referencial:</p>
+     * <ol>
+     *   <li>Refresh tokens da usuaria.</li>
+     *   <li>Token de verificación de correo electrónico.</li>
+     *   <li>Mapas gardados (favoritos).</li>
+     *   <li>Entradas de {@code MapaMembro} onde a usuaria é membro.</li>
+     *   <li>Convites onde é anfitrioa ou convidada.</li>
+     *   <li>Mapas propios da usuaria (con marcadores, categorías e historial en cascada).</li>
+     *   <li>Entidade {@code Usuaria}.</li>
+     * </ol>
+     *
+     * @param username nome da usuaria cuia conta se vai eliminar
+     * @throws IllegalArgumentException se non existe ningunha usuaria co username indicado
+     */
     @Override
     @Transactional
     public void eliminar(String username) {

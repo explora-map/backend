@@ -23,6 +23,20 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación do servizo de xestión do ciclo de vida dos convites.
+ *
+ * <p>Xestiona o envío e a resolución de convites para acceder a mapas privados.
+ * Os convites pasan polos seguintes estados:</p>
+ * <ul>
+ *   <li>{@code PENDENTE}: convite enviado, agardando resposta.</li>
+ *   <li>{@code ACEPTADO}: a convidada aceptou; créase automaticamente a entrada en {@code MapaMembro}.</li>
+ *   <li>{@code REXEITADO}: a convidada rexeitou o convite.</li>
+ *   <li>{@code CANCELADO}: a anfitrioa cancelou o convite antes de ser resolto.</li>
+ *   <li>{@code EXPIRADO}: o convite caducou; márcase de forma lazy ao intentar usalo.</li>
+ * </ul>
+ * <p>Só a propietaria do mapa pode enviar convites.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class ConviteServiceImpl implements ConviteService {
@@ -32,6 +46,20 @@ public class ConviteServiceImpl implements ConviteService {
     private final MapaRepository mapaRepository;
     private final MapaMembroRepository mapaMembroRepository;
 
+    /**
+     * Crea e persiste un novo convite a un mapa privado.
+     *
+     * <p>Só a propietaria do mapa pode enviar convites. O rol asignado á convidada
+     * pódese indicar explicitamente no DTO; se non, asígnase {@code MEMBRO} para mapas
+     * privados ou {@code COLABORADORA} para o resto. O convite expira aos 7 días.</p>
+     *
+     * @param usernameAnfitrioa username da usuaria que envía o convite (debe ser propietaria do mapa)
+     * @param dto               datos do convite: username da convidada, id do mapa e rol opcional
+     * @return DTO co convite creado e o seu token UUID
+     * @throws IllegalArgumentException se a anfitrioa, a convidada ou o mapa non existen,
+     *                                  ou se se intenta convidar a si mesma
+     * @throws IllegalStateException    se a anfitrioa non é propietaria do mapa
+     */
     @Transactional
     @Override
     public ConviteResponseDTO novo(String usernameAnfitrioa, ConviteRequestDTO dto) {
@@ -67,6 +95,12 @@ public class ConviteServiceImpl implements ConviteService {
         return toDTO(conviteRepository.save(convite));
     }
 
+    /**
+     * Devolve os convites enviados pola usuaria.
+     *
+     * @param username username da usuaria anfitrioa
+     * @return lista de convites enviados, en calquera estado
+     */
     @Override
     public List<ConviteResponseDTO> obterPorUsername(String username) {
         Usuaria anfitrioa = usuariaRepository.findByUsername(username)
@@ -75,6 +109,12 @@ public class ConviteServiceImpl implements ConviteService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Devolve os convites recibidos pola usuaria.
+     *
+     * @param username username da usuaria convidada
+     * @return lista de convites recibidos, en calquera estado
+     */
     @Override
     public List<ConviteResponseDTO> obterRecibidos(String username) {
         Usuaria convidada = usuariaRepository.findByUsername(username)
@@ -83,6 +123,19 @@ public class ConviteServiceImpl implements ConviteService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Acepta un convite pendente e incorpora a convidada ao mapa.
+     *
+     * <p>Cambia o estado do convite a {@code ACEPTADO} e crea a entrada en
+     * {@code MapaMembro} co rol definido no convite, se aínda non existe.
+     * Se o convite está caducado, márcase como {@code EXPIRADO} de forma lazy.</p>
+     *
+     * @param token    token UUID que identifica o convite
+     * @param username username da usuaria que acepta (debe ser a convidada)
+     * @throws IllegalArgumentException se o convite non existe
+     * @throws IllegalStateException    se o convite non está en estado PENDENTE,
+     *                                  ou se a usuaria non é a destinataria do convite
+     */
     @Transactional
     @Override
     public void aceptar(UUID token, String username) {
@@ -105,6 +158,18 @@ public class ConviteServiceImpl implements ConviteService {
         }
     }
 
+    /**
+     * Rexeita un convite pendente.
+     *
+     * <p>Cambia o estado do convite a {@code REXEITADO}.
+     * Se o convite está caducado, márcase como {@code EXPIRADO} de forma lazy.</p>
+     *
+     * @param token    token UUID que identifica o convite
+     * @param username username da usuaria que rexeita (debe ser a convidada)
+     * @throws IllegalArgumentException se o convite non existe
+     * @throws IllegalStateException    se o convite non está en estado PENDENTE,
+     *                                  ou se a usuaria non é a destinataria do convite
+     */
     @Transactional
     @Override
     public void rexeitar(UUID token, String username) {
@@ -117,6 +182,17 @@ public class ConviteServiceImpl implements ConviteService {
         conviteRepository.save(convite);
     }
 
+    /**
+     * Cancela un convite, impedindo que sexa resolto pola convidada.
+     *
+     * <p>Cambia o estado do convite a {@code CANCELADO}.
+     * Pode aplicarse a convites en calquera estado.</p>
+     *
+     * @param token    token UUID que identifica o convite
+     * @param username username da usuaria que cancela (debe ser a anfitrioa)
+     * @throws IllegalArgumentException se o convite non existe
+     * @throws IllegalStateException    se a usuaria non é a anfitrioa do convite
+     */
     @Transactional
     @Override
     public void cancelar(UUID token, String username) {

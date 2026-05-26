@@ -21,6 +21,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación do servizo de xestión de marcadores xeográficos.
+ *
+ * <p>Proporciona operacións CRUD sobre os marcadores dentro dun mapa colaborativo.
+ * O control de acceso é o seguinte:</p>
+ * <ul>
+ *   <li>Calquera membro con acceso ao mapa pode consultar os marcadores.</li>
+ *   <li>Só COLABORADORA, ADMIN_MAPA e a propietaria poden crear marcadores.</li>
+ *   <li>COLABORADORA só pode editar ou eliminar os seus propios marcadores.</li>
+ *   <li>ADMIN_MAPA e a propietaria poden editar ou eliminar calquera marcador.</li>
+ * </ul>
+ * <p>Cada operación de escritura queda rexistrada no historial do mapa.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class MarcadorServiceImpl implements MarcadorService {
@@ -33,6 +46,15 @@ public class MarcadorServiceImpl implements MarcadorService {
     private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
 
+    /**
+     * Devolve todos os marcadores dun mapa.
+     *
+     * @param mapaId   identificador do mapa
+     * @param username usuaria que solicita a listaxe
+     * @return lista de marcadores do mapa
+     * @throws IllegalArgumentException se o mapa non existe
+     * @throws IllegalStateException    se a usuaria non ten acceso ao mapa
+     */
     @Transactional(readOnly = true)
     @Override
     public List<MarcadorResponseDTO> listarPorMapa(Long mapaId, String username) {
@@ -43,6 +65,20 @@ public class MarcadorServiceImpl implements MarcadorService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Crea un novo marcador xeográfico nun mapa colaborativo.
+     *
+     * <p>Require rol COLABORADORA, ADMIN_MAPA ou ser propietaria do mapa.
+     * Se se indica categoría, debe pertencer ao mesmo mapa.
+     * Rexistra a acción no historial.</p>
+     *
+     * @param mapaId   identificador do mapa no que se crea o marcador
+     * @param dto      datos do novo marcador: nome, descrición, coordenadas e categoría opcional
+     * @param username usuaria creadora
+     * @return DTO co marcador creado
+     * @throws IllegalArgumentException se o mapa ou a categoría indicada non existen
+     * @throws IllegalStateException    se a usuaria non ten permiso de escritura no mapa
+     */
     @Transactional
     @Override
     public MarcadorResponseDTO crear(Long mapaId, MarcadorRequestDTO dto, String username) {
@@ -74,6 +110,20 @@ public class MarcadorServiceImpl implements MarcadorService {
         return toDTO(gardado);
     }
 
+    /**
+     * Edita os datos dun marcador existente.
+     *
+     * <p>COLABORADORA só pode editar os seus propios marcadores.
+     * ADMIN_MAPA e a propietaria poden editar calquera.
+     * Rexistra a acción no historial.</p>
+     *
+     * @param id       identificador do marcador a editar
+     * @param dto      novos datos do marcador: nome, descrición, coordenadas e categoría opcional
+     * @param username usuaria que solicita a edición
+     * @return DTO co marcador actualizado
+     * @throws IllegalArgumentException se o marcador ou a categoría indicada non existen
+     * @throws IllegalStateException    se a usuaria non ten permiso para editar este marcador
+     */
     @Transactional
     @Override
     public MarcadorResponseDTO editar(Long id, MarcadorRequestDTO dto, String username) {
@@ -104,6 +154,18 @@ public class MarcadorServiceImpl implements MarcadorService {
         return toDTO(editado);
     }
 
+    /**
+     * Elimina un marcador do mapa.
+     *
+     * <p>COLABORADORA só pode eliminar os seus propios marcadores.
+     * ADMIN_MAPA e a propietaria poden eliminar calquera.
+     * Rexistra a acción no historial antes da eliminación.</p>
+     *
+     * @param id       identificador do marcador a eliminar
+     * @param username usuaria que solicita a eliminación
+     * @throws IllegalArgumentException se o marcador non existe
+     * @throws IllegalStateException    se a usuaria non ten permiso para eliminar este marcador
+     */
     @Transactional
     @Override
     public void eliminar(Long id, String username) {

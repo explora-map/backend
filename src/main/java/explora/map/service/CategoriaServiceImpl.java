@@ -20,6 +20,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación do servizo de xestión de categorías de marcadores.
+ *
+ * <p>Proporciona operacións CRUD sobre as categorías dentro dun mapa colaborativo.
+ * O control de acceso é o seguinte:</p>
+ * <ul>
+ *   <li>Calquera membro con acceso ao mapa pode consultar as categorías.</li>
+ *   <li>Só COLABORADORA, ADMIN_MAPA e a propietaria poden crear categorías.</li>
+ *   <li>COLABORADORA só pode editar ou eliminar as súas propias categorías.</li>
+ *   <li>ADMIN_MAPA e a propietaria poden editar ou eliminar calquera categoría.</li>
+ *   <li>Ao eliminar unha categoría, os marcadores asociados quedan sen categoría asignada.</li>
+ * </ul>
+ * <p>Cada operación de escritura queda rexistrada no historial do mapa.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class CategoriaServiceImpl implements CategoriaService {
@@ -32,6 +46,15 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final MapaMembroRepository mapaMembroRepository;
     private final HistorialService historialService;
 
+    /**
+     * Devolve todas as categorías dun mapa.
+     *
+     * @param mapaId   identificador do mapa
+     * @param username usuaria que solicita a listaxe
+     * @return lista de categorías do mapa
+     * @throws IllegalArgumentException se o mapa non existe
+     * @throws IllegalStateException    se a usuaria non ten acceso ao mapa
+     */
     @Transactional(readOnly = true)
     @Override
     public List<CategoriaResponseDTO> listarPorMapa(Long mapaId, String username) {
@@ -42,6 +65,19 @@ public class CategoriaServiceImpl implements CategoriaService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Crea unha nova categoría nun mapa colaborativo.
+     *
+     * <p>Require rol COLABORADORA, ADMIN_MAPA ou ser propietaria do mapa.
+     * Rexistra a acción no historial.</p>
+     *
+     * @param mapaId   identificador do mapa no que se crea a categoría
+     * @param dto      datos da nova categoría: nome, cor e icona
+     * @param username usuaria creadora
+     * @return DTO coa categoría creada
+     * @throws IllegalArgumentException se o mapa non existe
+     * @throws IllegalStateException    se a usuaria non ten permiso de escritura no mapa
+     */
     @Transactional
     @Override
     public CategoriaResponseDTO crear(Long mapaId, CategoriaRequestDTO dto, String username) {
@@ -67,6 +103,20 @@ public class CategoriaServiceImpl implements CategoriaService {
         return toDTO(gardada);
     }
 
+    /**
+     * Edita os datos dunha categoría existente.
+     *
+     * <p>COLABORADORA só pode editar as súas propias categorías.
+     * ADMIN_MAPA e a propietaria poden editar calquera.
+     * Rexistra a acción no historial.</p>
+     *
+     * @param id       identificador da categoría a editar
+     * @param dto      novos datos da categoría: nome, cor e icona
+     * @param username usuaria que solicita a edición
+     * @return DTO coa categoría actualizada
+     * @throws IllegalArgumentException se a categoría non existe
+     * @throws IllegalStateException    se a usuaria non ten permiso para editar esta categoría
+     */
     @Transactional
     @Override
     public CategoriaResponseDTO editar(Long id, CategoriaRequestDTO dto, String username) {
@@ -89,6 +139,19 @@ public class CategoriaServiceImpl implements CategoriaService {
         return toDTO(editada);
     }
 
+    /**
+     * Elimina unha categoría do mapa.
+     *
+     * <p>Os marcadores asociados á categoría eliminada quedan sen categoría asignada.
+     * COLABORADORA só pode eliminar as súas propias categorías.
+     * ADMIN_MAPA e a propietaria poden eliminar calquera.
+     * Rexistra a acción no historial antes da eliminación.</p>
+     *
+     * @param id       identificador da categoría a eliminar
+     * @param username usuaria que solicita a eliminación
+     * @throws IllegalArgumentException se a categoría non existe
+     * @throws IllegalStateException    se a usuaria non ten permiso para eliminar esta categoría
+     */
     @Transactional
     @Override
     public void eliminar(Long id, String username) {

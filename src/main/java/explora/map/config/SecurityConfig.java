@@ -49,7 +49,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/h2-console/**",   // consola H2 en dev
-                                "/error"
+                                "/error",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**"
                         ).permitAll()
                         // Todo o demais require autenticación
                         .anyRequest().authenticated()

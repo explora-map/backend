@@ -25,6 +25,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación de {@link MapaService} que xestiona o ciclo de vida dos mapas.
+ *
+ * <p>Responsabilidades principais:</p>
+ * <ul>
+ *   <li>Creación, edición, eliminación e consulta de mapas.</li>
+ *   <li>Control de acceso baseado en propiedade ({@code creadoPor}) e convites aceptados.</li>
+ *   <li>Resolución de datos xeográficos (cidade, rexión, país) mediante a API Nominatim.</li>
+ *   <li>Rexistro de accións no historial de actividade do mapa.</li>
+ * </ul>
+ */
 @Service
 @RequiredArgsConstructor
 public class MapaServiceImpl implements MapaService {
@@ -37,6 +48,17 @@ public class MapaServiceImpl implements MapaService {
     private final HistorialService historialService;
     private final HistorialRepository historialRepository;
 
+    /**
+     * Crea un novo mapa e rexistra a acción no historial.
+     *
+     * <p>Resolve automaticamente os datos xeográficos (cidade, rexión, país)
+     * a partir das coordenadas mediante Nominatim. Se a chamada falla,
+     * os campos de localización quedan como {@code null}.</p>
+     *
+     * @param username nome da usuaria creadora do mapa
+     * @param dto      datos do novo mapa (nome, coordenadas, tipo, etc.)
+     * @return DTO co mapa creado, incluíndo o id asignado pola base de datos
+     */
     @Transactional
     @Override
     public MapaResponseDTO novo(String username, MapaRequestDTO dto) {
@@ -68,6 +90,18 @@ public class MapaServiceImpl implements MapaService {
         return toDTO(gardado);
     }
 
+    /**
+     * Obtén un mapa polo seu identificador, verificando que a usuaria ten acceso.
+     *
+     * <p>O acceso a un mapa privado concédese se a usuaria é a creadora ou
+     * ten un convite en estado {@code ACEPTADO} para ese mapa.</p>
+     *
+     * @param mapaId   identificador do mapa a consultar
+     * @param username nome da usuaria que solicita o acceso
+     * @return DTO co mapa solicitado
+     * @throws IllegalArgumentException se non existe ningún mapa co id indicado
+     * @throws IllegalStateException    se o mapa é privado e a usuaria non ten acceso
+     */
     @Transactional(readOnly = true)
     @Override
     public MapaResponseDTO obterPorId(Long mapaId, String username) {
@@ -88,12 +122,32 @@ public class MapaServiceImpl implements MapaService {
         return toDTO(mapa);
     }
 
+    /**
+     * Obtén todos os mapas creados pola usuaria indicada.
+     *
+     * @param username nome da usuaria propietaria dos mapas
+     * @return lista de DTOs cos mapas da usuaria; lista baleira se non ten ningún
+     */
     @Override
     public List<MapaResponseDTO> obterPorUsername(String username) {
         return mapaRepository.findByCreadoPor(username)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Edita os datos dun mapa existente.
+     *
+     * <p>Se as coordenadas cambian respecto ás orixinais, resolve de novo
+     * os datos xeográficos mediante Nominatim. Se a chamada falla,
+     * os campos de localización quedan como {@code null}.</p>
+     *
+     * @param id       identificador do mapa a editar
+     * @param username nome da usuaria que realiza a edición
+     * @param dto      novos datos do mapa
+     * @return DTO co mapa actualizado
+     * @throws IllegalArgumentException se non existe ningún mapa co id indicado
+     * @throws IllegalStateException    se a usuaria non é a creadora do mapa
+     */
     @Transactional
     @Override
     public MapaResponseDTO editar(Long id, String username, MapaRequestDTO dto) {
@@ -132,6 +186,17 @@ public class MapaServiceImpl implements MapaService {
         return toDTO(editado);
     }
 
+    /**
+     * Elimina un mapa e todo o seu historial de actividade asociado.
+     *
+     * <p>Os marcadores, categorías e membros do mapa elimínanse en cascada
+     * a nivel de base de datos mediante {@code @OnDelete(CASCADE)}.</p>
+     *
+     * @param id       identificador do mapa a eliminar
+     * @param username nome da usuaria que solicita a eliminación
+     * @throws IllegalArgumentException se non existe ningún mapa co id indicado
+     * @throws IllegalStateException    se a usuaria non é a creadora do mapa
+     */
     @Transactional
     @Override
     public void eliminar(Long id, String username) {
@@ -144,6 +209,17 @@ public class MapaServiceImpl implements MapaService {
         mapaRepository.delete(mapa);
     }
 
+    /**
+     * Obtén os mapas públicos situados dentro dun radio xeográfico dado.
+     *
+     * <p>A distancia calcúlase coa fórmula de Haversine sobre a esfera terrestre
+     * (radio medio: {@value #EARTH_RADIUS_KM} km).</p>
+     *
+     * @param latitude  latitude do punto central da busca, en graos decimais
+     * @param lonxitude lonxitude do punto central da busca, en graos decimais
+     * @param radio     radio máximo de busca en quilómetros
+     * @return lista de DTOs cos mapas públicos dentro do radio; lista baleira se non hai ningún
+     */
     @Override
     public List<MapaResponseDTO> obterPorTipoPublico(Double latitude, Double lonxitude, Double radio) {
         return mapaRepository.findByTipo(TipoMapa.PUBLICO)
@@ -162,6 +238,18 @@ public class MapaServiceImpl implements MapaService {
         return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
+    /**
+     * Cambia a visibilidade dun mapa entre {@code PUBLICO} e {@code PRIVADO}.
+     *
+     * <p>Rexistra a acción como {@code EDITAR} no historial do mapa.</p>
+     *
+     * @param id       identificador do mapa a modificar
+     * @param username nome da usuaria que solicita o cambio
+     * @param tipo     novo tipo de visibilidade ({@code PUBLICO} ou {@code PRIVADO})
+     * @return DTO co mapa actualizado co novo tipo de visibilidade
+     * @throws IllegalArgumentException se non existe ningún mapa co id indicado
+     * @throws IllegalStateException    se a usuaria non é a creadora do mapa
+     */
     @Transactional
     @Override
     public MapaResponseDTO cambiarVisibilidade(Long id, String username, TipoMapa tipo) {
@@ -184,6 +272,16 @@ public class MapaServiceImpl implements MapaService {
         return toDTO(gardado);
     }
 
+    /**
+     * Obtén todos os mapas nos que a usuaria participa como membro (non como creadora).
+     *
+     * <p>Inclúe o rol da usuaria en cada mapa para que o frontend poida
+     * mostrar as accións dispoñibles segundo os seus permisos.</p>
+     *
+     * @param username nome da usuaria cuxa participación se consulta
+     * @return lista de DTOs de colaboración cos mapas e o rol da usuaria en cada un;
+     *         lista baleira se a usuaria non é membro de ningún mapa
+     */
     @Transactional(readOnly = true)
     @Override
     public List<MapaColaboracionResponseDTO> obterMapasColaboradora(String username) {

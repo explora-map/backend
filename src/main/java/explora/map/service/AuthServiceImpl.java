@@ -28,6 +28,16 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+/**
+ * Implementación do servizo de autenticación.
+ *
+ * <p>Xestiona o ciclo completo de autenticación de usuarias: rexistro con verificación
+ * por correo, inicio de sesión con emisión de tokens JWT, renovación de tokens mediante
+ * rotación de refresh token, e peche de sesión con revogación do token.</p>
+ *
+ * <p>O rexistro crea a usuaria nun estado non verificado ata que confirme o correo.
+ * O acceso está bloqueado para contas non verificadas.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -44,6 +54,16 @@ public class AuthServiceImpl implements AuthService {
     private int expiracionHoras;
 
 
+    /**
+     * Rexistra unha nova usuaria na plataforma.
+     *
+     * <p>Crea a conta no estado non verificado e envía un token de verificación
+     * ao correo electrónico indicado. O acceso estará bloqueado ata que a usuaria
+     * confirme a súa conta.</p>
+     *
+     * @param request datos de rexistro: nome, username, correo e contrasinal
+     * @throws IllegalArgumentException se o username ou o correo xa están en uso
+     */
     @Transactional
     @Override
     public void rexistro(RegisterRequestDTO request) {
@@ -85,6 +105,17 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * Autentica unha usuaria e devolve un par de tokens JWT.
+     *
+     * <p>Valida as credenciais, comproba que a conta estea verificada e xera
+     * un access token de curta duración xunto cun refresh token persistido na base de datos.</p>
+     *
+     * @param request credenciais de acceso: username e contrasinal
+     * @return DTO co access token, o refresh token e a data de expiración
+     * @throws BadCredentialsException se o username ou o contrasinal son incorrectos
+     * @throws IllegalStateException   se a conta da usuaria non está verificada
+     */
     @Transactional
     @Override
     public JwtResponseDTO entrar(LoginRequestDTO request) throws RuntimeException{
@@ -107,6 +138,14 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * Pecha a sesión da usuaria invalidando o seu refresh token.
+     *
+     * <p>Revoga o refresh token na base de datos, impedindo calquera renovación futura
+     * con ese token. O access token seguirá sendo válido ata a súa expiración natural.</p>
+     *
+     * @param request contén o refresh token a invalidar
+     */
     @Transactional
     @Override
     public void sair(RefreshTokenRequestDTO request){
