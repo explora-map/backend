@@ -28,7 +28,7 @@ public class EmailServiceImpl implements EmailService {
             "Se non creaches esta conta, ignora este correo.\n\n" +
             "O equipo de Explora"
         );
-        mensaxe.setFrom("noreply@explora.app");
+        mensaxe.setFrom("noreply@explora-mapa.eu");
         mailSender.send(mensaxe);
     }
 }
