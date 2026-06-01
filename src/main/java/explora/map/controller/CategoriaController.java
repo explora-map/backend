@@ -32,7 +32,8 @@ public class CategoriaController {
     })
     @GetMapping("/api/mapas/{mapaId}/categorias")
     public ResponseEntity<List<CategoriaResponseDTO>> listarPorMapa(@PathVariable Long mapaId, Authentication auth) {
-        return ResponseEntity.ok(categoriaService.listarPorMapa(mapaId, auth.getName()));
+        String username = (auth != null) ? auth.getName() : null;
+        return ResponseEntity.ok(categoriaService.listarPorMapa(mapaId, username));
     }
 
     @Operation(summary = "Crear unha nova categoría nun mapa")

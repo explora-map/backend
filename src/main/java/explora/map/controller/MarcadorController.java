@@ -32,7 +32,8 @@ public class MarcadorController {
     })
     @GetMapping("/api/mapas/{mapaId}/marcadores")
     public ResponseEntity<List<MarcadorResponseDTO>> listarPorMapa(@PathVariable Long mapaId, Authentication auth) {
-        return ResponseEntity.ok(marcadorService.listarPorMapa(mapaId, auth.getName()));
+        String username = (auth != null) ? auth.getName() : null;
+        return ResponseEntity.ok(marcadorService.listarPorMapa(mapaId, username));
     }
 
     @Operation(summary = "Crear un novo marcador nun mapa", tags = {"Marcadores"})
