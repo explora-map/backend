@@ -49,6 +49,7 @@ public class SecurityConfig {
                         // Endpoints públicos
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/mapas/publicos",
                                 "/h2-console/**",   // consola H2 en dev
                                 "/error",
                                 "/swagger-ui.html",
