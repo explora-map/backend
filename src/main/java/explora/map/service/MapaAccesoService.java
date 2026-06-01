@@ -35,8 +35,13 @@ public class MapaAccesoService {
      *                               nin ten entrada en {@code MapaMembro}
      */
     public void verificar(Mapa mapa, String username) {
+        // Mapas públicos son accesibles sen autenticación
         if (mapa.getTipo() == TipoMapa.PUBLICO) {
             return;
+        }
+        // Mapas privados requiren autenticación
+        if (username == null) {
+            throw new IllegalStateException("Sen permiso para acceder a este mapa");
         }
         if (mapa.getCreadoPor().equals(username)) {
             return;

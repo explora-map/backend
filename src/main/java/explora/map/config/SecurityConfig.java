@@ -49,15 +49,19 @@ public class SecurityConfig {
                         // Endpoints públicos
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/api/mapas/publicos",
-                                "/h2-console/**",   // consola H2 en dev
+                                "/h2-console/**",
                                 "/error",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                        // Todo o demais require autenticación
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/mapas/publicos",
+                                "/api/mapas/{id}",
+                                "/api/mapas/{mapaId}/categorias",
+                                "/api/mapas/{mapaId}/marcadores"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
 
