@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-/** Controlador REST para a consulta e xestión do perfil da usuaria autenticada. */
+/** Controlador REST para o perfil da usuaria autenticada. Endpoints baixo /api/perfil. */
 @Tag(name = "Perfil", description = "Consulta e actualización do perfil da usuaria autenticada")
 @RestController
 @RequestMapping("/api/perfil")

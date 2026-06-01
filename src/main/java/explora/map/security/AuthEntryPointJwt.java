@@ -15,11 +15,20 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Punto de entrada de Spring Security para peticións non autenticadas. Devolve unha resposta 401 en JSON. */
 @Component
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthEntryPointJwt.class);
 
+    /**
+     * Invocado cando unha petición non autenticada intenta acceder a un recurso protexido.
+     * Escribe unha resposta JSON con código HTTP 401.
+     *
+     * @param request       petición HTTP que non superou a autenticación
+     * @param response      resposta HTTP onde se escribe o erro 401
+     * @param authException excepción de autenticación que orixinou o rexeitamento
+     */
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException, ServletException {

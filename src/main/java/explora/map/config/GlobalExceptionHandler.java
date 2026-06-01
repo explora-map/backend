@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Manejador global de excepcións REST. Mapea as excepcións de negocio a respostas HTTP con código e mensaxe apropiados. */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {

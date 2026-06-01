@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** DTO de entrada para cambiar o rol dun membro nun mapa. */
 @Getter
 @Setter
 @AllArgsConstructor

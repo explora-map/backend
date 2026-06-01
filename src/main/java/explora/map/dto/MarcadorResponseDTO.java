@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída con os datos dun marcador. */
 @Schema(description = "Datos públicos dun marcador xeográfico")
 @Getter
 @Setter

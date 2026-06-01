@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Controlador REST para a xestión de categorías de marcadores dentro dun mapa. */
+/** Controlador REST para categorías dun mapa. Endpoints baixo /api/mapas/{mapaId}/categorias e /api/categorias. */
 @Tag(name = "Categorías", description = "Xestión de categorías de marcadores dentro dun mapa")
 @RestController
 @RequiredArgsConstructor

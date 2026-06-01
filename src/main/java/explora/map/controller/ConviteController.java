@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-/** Controlador REST para o envío, consulta e xestión de convites a mapas privados. */
+/** Controlador REST para convites entre usuarias. Endpoints baixo /api/convites. */
 @Tag(name = "Convites", description = "Envío, consulta e xestión de convites a mapas privados")
 @RestController
 @RequestMapping("/api/convites")

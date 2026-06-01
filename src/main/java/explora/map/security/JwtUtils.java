@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
+/** Utilidade para xeración, validación e extracción de datos de tokens JWT. */
 @Component
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
@@ -34,6 +35,12 @@ public class JwtUtils {
         }
     }
 
+    /**
+     * Xera un JWT asinado co username como suxeito.
+     *
+     * @param username nome de usuaria a codificar no token
+     * @return token JWT asinado en formato compacto Base64
+     */
     public String generateTokenFromUsername(String username) {
         Date now    = new Date();
         Date expiration = new Date(now.getTime() + jwtExpirationMs);
@@ -46,6 +53,12 @@ public class JwtUtils {
                 .compact();
     }
 
+    /**
+     * Valida a sinatura e a vixencia do token JWT.
+     *
+     * @param token string JWT a validar
+     * @return {@code true} se o token é válido e non expirou; {@code false} en caso contrario
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -65,6 +78,12 @@ public class JwtUtils {
         return false;
     }
 
+    /**
+     * Extrae o username do payload dun token JWT válido.
+     *
+     * @param token string JWT do que se extrae o suxeito
+     * @return nome de usuaria codificado no campo {@code sub} do token
+     */
     public String getUsernameFromToken(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -74,10 +93,21 @@ public class JwtUtils {
                 .getSubject();
     }
 
+    /**
+     * Calcula a data e hora de expiración para un token xerado no momento actual.
+     *
+     * @return data e hora de expiración en fuso horario do sistema
+     */
     public LocalDateTime calculateExpirationDateTime() {
         return LocalDateTime.now().plusSeconds(jwtExpirationMs / 1000);
     }
 
+    /**
+     * Obtén a data e hora de expiración dun token JWT existente.
+     *
+     * @param token string JWT do que se extrae a data de expiración
+     * @return data e hora de expiración contida no payload do token
+     */
     public LocalDateTime getExpirationDateTime(String token) {
         Date expiry = Jwts.parser()
                 .verifyWith(getSigningKey())

@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída con os datos dun mapa no que a usuaria é colaboradora, incluíndo o seu rol. */
 @Schema(description = "Datos dun mapa no que a usuaria participa como colaboradora, incluíndo o seu rol")
 @Getter
 @Setter

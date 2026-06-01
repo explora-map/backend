@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/** Filtro de Spring Security que extrae e valida o JWT de cada petición HTTP. */
 @Component
 @RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
@@ -25,6 +26,14 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
+    /**
+     * Intercepta cada petición HTTP, extrae o JWT do header {@code Authorization}
+     * e, se é válido, establece a autenticación no contexto de Spring Security.
+     *
+     * @param request     petición HTTP entrante
+     * @param response    resposta HTTP que será enviada ao cliente
+     * @param filterChain cadea de filtros de Spring Security que se debe continuar
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

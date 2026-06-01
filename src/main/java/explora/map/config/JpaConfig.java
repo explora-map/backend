@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
+/** Configuración de JPA Auditing. Activa @EnableJpaAuditing e provee o AuditorAware co username da usuaria autenticada. */
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider")
 public class JpaConfig {

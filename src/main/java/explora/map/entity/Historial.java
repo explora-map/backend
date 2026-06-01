@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que rexistra cada acción realizada sobre un mapa (crear, editar, eliminar). */
 @Entity
 @Table(name = "entrada_historial")
 @EntityListeners(AuditingEntityListener.class)

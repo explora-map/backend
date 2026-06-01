@@ -3,6 +3,7 @@ package explora.map.service;
 import explora.map.dto.PerfilRequestDTO;
 import explora.map.dto.PerfilResponseDTO;
 
+/** Interface do servizo de xestión do perfil de usuaria. */
 public interface PerfilService {
     PerfilResponseDTO obterPerfil(String username);
     PerfilResponseDTO actualizarPerfil(String username, PerfilRequestDTO dto);

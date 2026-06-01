@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** DTO de saída con os datos dun membro dun mapa. */
 @Schema(description = "Datos dun membro dentro dun mapa colaborativo")
 @Getter
 @Setter

@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída con unha entrada do historial de cambios. */
 @Schema(description = "Entrada do historial de actividade dun mapa colaborativo")
 @Getter
 @Setter

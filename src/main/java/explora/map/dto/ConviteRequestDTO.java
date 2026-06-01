@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+/** DTO de entrada para enviar un convite a unha usuaria. */
 @Getter
 @Setter
 @AllArgsConstructor

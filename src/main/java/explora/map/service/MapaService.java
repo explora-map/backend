@@ -7,6 +7,7 @@ import explora.map.entity.TipoMapa;
 
 import java.util.List;
 
+/** Interface do servizo de xestión de mapas. */
 public interface MapaService {
     MapaResponseDTO novo(String username, MapaRequestDTO mapaNovoDTO);
     MapaResponseDTO obterPorId(Long mapaId, String username);

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+/** DTO de saída co perfil da usuaria autenticada. */
 @Schema(description = "Datos do perfil da usuaria autenticada")
 @Data
 @Builder

@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que representa un mapa colaborativo. Pode ser público ou privado. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

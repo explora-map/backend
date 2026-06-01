@@ -5,6 +5,7 @@ import explora.map.dto.CategoriaResponseDTO;
 
 import java.util.List;
 
+/** Interface do servizo de categorías dun mapa. */
 public interface CategoriaService {
     List<CategoriaResponseDTO> listarPorMapa(Long mapaId, String username);
     CategoriaResponseDTO crear(Long mapaId, CategoriaRequestDTO dto, String username);

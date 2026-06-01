@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** DTO de entrada cos datos de rexistro dunha nova usuaria. */
 @Getter
 @Setter
 @AllArgsConstructor

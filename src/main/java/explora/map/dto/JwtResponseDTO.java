@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída coas credenciais JWT tras un login ou renovación de token. */
 @Schema(description = "Par de tokens JWT devolvido tras o login ou a renovación de token")
 @Getter
 @Setter

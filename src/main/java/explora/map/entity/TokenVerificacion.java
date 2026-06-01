@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+/** Entidade JPA que almacena o token de verificación de conta por correo. */
 @Entity
 @Table(name = "token_verificacion")
 @Data

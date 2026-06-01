@@ -7,6 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/** DTO de saída con os datos dun convite. */
 @Schema(description = "Datos públicos dun convite a un mapa privado")
 @Getter
 @Setter

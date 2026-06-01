@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+/** DTO de entrada para actualizar o perfil da usuaria. Todos os campos son opcionais (patch parcial). */
 @Data
 public class PerfilRequestDTO {
     @Size(min = 3, max = 20)

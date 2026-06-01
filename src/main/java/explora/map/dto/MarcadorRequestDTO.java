@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** DTO de entrada para crear ou editar un marcador. */
 @Getter
 @Setter
 @AllArgsConstructor

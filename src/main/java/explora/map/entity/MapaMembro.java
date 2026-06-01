@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que asocia unha usuaria cun mapa privado, co seu rol de acceso. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

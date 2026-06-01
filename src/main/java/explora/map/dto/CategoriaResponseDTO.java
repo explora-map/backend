@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída con os datos dunha categoría. */
 @Schema(description = "Datos públicos dunha categoría de marcadores")
 @Getter
 @Setter

@@ -15,6 +15,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que representa unha categoría visual para organizar os marcadores dun mapa. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

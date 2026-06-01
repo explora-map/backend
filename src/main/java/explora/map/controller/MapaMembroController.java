@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Controlador REST para a xestión de membros e roles dentro dun mapa colaborativo. */
+/** Controlador REST para a xestión de membros dun mapa. Endpoints baixo /api/mapas/{mapaId}/membros. */
 @Tag(name = "Membros", description = "Xestión de membros e roles dentro dun mapa colaborativo")
 @RestController
 @RequiredArgsConstructor

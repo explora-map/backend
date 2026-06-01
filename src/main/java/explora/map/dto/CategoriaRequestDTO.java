@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** DTO de entrada para crear ou editar unha categoría. */
 @Getter
 @Setter
 @AllArgsConstructor

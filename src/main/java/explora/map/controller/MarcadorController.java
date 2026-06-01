@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Controlador REST para a creación, consulta, edición e eliminación de marcadores xeográficos. */
+/** Controlador REST para marcadores xeográficos. Endpoints baixo /api/mapas/{mapaId}/marcadores e /api/marcadores. */
 @Tag(name = "Marcadores", description = "Creación, consulta, edición e eliminación de marcadores xeográficos nun mapa")
 @RestController
 @RequiredArgsConstructor

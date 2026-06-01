@@ -20,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
+/** Configuración principal de Spring Security. Define as regras de acceso, filtros JWT e codificación de contrasinais. */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity

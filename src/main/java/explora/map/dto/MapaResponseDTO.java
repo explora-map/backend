@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/** DTO de saída con os datos dun mapa. */
 @Schema(description = "Datos públicos dun mapa colaborativo")
 @Getter
 @Setter

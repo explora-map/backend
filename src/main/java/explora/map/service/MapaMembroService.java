@@ -5,6 +5,7 @@ import explora.map.entity.RolMapa;
 
 import java.util.List;
 
+/** Interface do servizo de xestión de membros dun mapa. */
 public interface MapaMembroService {
     List<MapaMembroResponseDTO> listarMembros(Long mapaId, String username);
     MapaMembroResponseDTO cambiarRol(Long mapaId, String usernameObxectivo, RolMapa novoRol, String username);

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que almacena o hash dun refresh token JWT activo. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

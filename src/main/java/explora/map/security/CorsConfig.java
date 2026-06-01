@@ -11,11 +11,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.Arrays;
 import java.util.List;
 
+/** Configuración CORS da aplicación. Permite peticións desde as orixes definidas en cors.allowed.origins. */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
     @Value("${cors.allowed.origins}")
     private String allowedOrigins;
 
+    /**
+     * Rexistra a configuración CORS para todos os paths da aplicación.
+     *
+     * @return fonte de configuración CORS aplicada a {@code /**}
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+/** DTO de entrada para crear ou editar un mapa. */
 @Getter
 @Setter
 @AllArgsConstructor

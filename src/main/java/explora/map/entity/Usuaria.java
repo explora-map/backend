@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/** Entidade JPA que representa unha usuaria rexistrada na aplicación. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

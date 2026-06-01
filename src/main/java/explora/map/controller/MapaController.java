@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-/** Controlador REST para a creación, consulta, edición e eliminación de mapas. */
+/** Controlador REST para a xestión de mapas. Endpoints baixo /api/mapas. */
 @Tag(name = "Mapas", description = "Creación, consulta, edición e eliminación de mapas colaborativos")
 @RestController
 @RequestMapping("/api/mapas")

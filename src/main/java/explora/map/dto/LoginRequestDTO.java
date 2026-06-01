@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+/** DTO de entrada coas credenciais de login. */
 @Getter
 @Setter
 @AllArgsConstructor

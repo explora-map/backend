@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 
-/** Controlador REST para a consulta do historial de cambios dun mapa colaborativo. */
+/** Controlador REST para o historial de cambios dun mapa. Endpoints baixo /api/mapas/{mapaId}/historial. */
 @Tag(name = "Historial", description = "Consulta do historial de cambios dun mapa colaborativo")
 @RestController
 @RequestMapping("/api/mapas/{mapaId}/historial")

@@ -7,6 +7,7 @@ import explora.map.entity.TipoElemento;
 
 import java.util.List;
 
+/** Interface do servizo de historial de cambios dun mapa. */
 public interface HistorialService {
 
     void rexistrar(Mapa mapa, String usuaria, TipoAccion accion, TipoElemento elemento, Long elementoId, String elementoNome, String detalle);

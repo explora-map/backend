@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Controlador REST para gardar e desgardar mapas de acceso rápido. */
+/** Controlador REST para mapas gardados como favoritos. Endpoints baixo /api/mapas/gardados e /api/mapas/{mapaId}/gardar. */
 @Tag(name = "Mapas gardados", description = "Gardar e desgardar mapas para acceso rápido")
 @RestController
 @RequiredArgsConstructor

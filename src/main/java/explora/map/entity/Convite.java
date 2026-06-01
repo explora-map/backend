@@ -15,6 +15,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/** Entidade JPA que representa un convite para unirse a un mapa con un rol determinado. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

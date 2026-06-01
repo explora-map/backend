@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/** Controlador REST para a verificación de correo electrónico mediante token. */
+/** Controlador REST para a verificación de conta por correo. Endpoints baixo /api/auth/verificar. */
 @Tag(name = "Verificación", description = "Verificación de correo electrónico mediante token")
 @RestController
 @RequestMapping("/api/auth")

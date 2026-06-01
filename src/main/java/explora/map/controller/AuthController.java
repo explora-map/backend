@@ -15,20 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Controlador REST para a xestión da autenticación e sesión de usuarias.
- *
- * <p>Expón os seguintes endpoints baixo {@code /api/auth}:</p>
- * <ul>
- *   <li>{@code POST /rexistro} — rexistro dunha nova conta.</li>
- *   <li>{@code POST /entrar}   — inicio de sesión con credenciais.</li>
- *   <li>{@code POST /renovar}  — renovación do access token mediante refresh token.</li>
- *   <li>{@code POST /pechar}   — peche de sesión e invalidación do refresh token.</li>
- * </ul>
- *
- * <p>Todos os erros de permisos e credenciais son xestionados polo
- * {@code GlobalExceptionHandler}, que os converte en respostas HTTP axeitadas.</p>
- */
+/** Controlador REST para autenticación. Endpoints baixo /api/auth. */
 @Tag(name = "Autenticación", description = "Rexistro, login, renovación de token e verificación de conta")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
