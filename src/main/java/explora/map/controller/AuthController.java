@@ -2,7 +2,6 @@ package explora.map.controller;
 
 import explora.map.dto.JwtResponseDTO;
 import explora.map.dto.LoginRequestDTO;
-import explora.map.dto.RefreshTokenRequestDTO;
 import explora.map.dto.RegisterRequestDTO;
 import explora.map.service.AuthService;
 import explora.map.service.RefreshTokenService;
@@ -10,20 +9,29 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+
 /** Controlador REST para autenticación. Endpoints baixo /api/auth. */
 @Tag(name = "Autenticación", description = "Rexistro, login, renovación de token e verificación de conta")
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
     private final RefreshTokenService refreshTokenService;
+
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
 
     /**
      * Rexistra unha nova conta de usuaria e envía un correo de verificación.
@@ -49,15 +57,17 @@ public class AuthController {
     }
 
     /**
-     * Autentica as credenciais da usuaria e devolve un par de tokens JWT.
+     * Autentica as credenciais da usuaria e devolve un access token JWT.
      *
      * <p>O access token ten unha duración curta (configurada en
-     * {@code jwt.access.expiracion}). O refresh token permite renovalo
-     * sen necesidade de volver a introducir as credenciais.</p>
+     * {@code jwt.access.expiracion}). O refresh token emítese como cookie HttpOnly
+     * co path {@code /api/auth} para que só os endpoints de renovación e peche
+     * o reciban automaticamente.</p>
      *
      * @param request credenciais de acceso: username e contrasinal
+     * @param response resposta HTTP onde se engade a cookie {@code refresh_token}
      * @return {@code 200 OK} con {@link JwtResponseDTO} que contén o access token,
-     *         o refresh token, o tipo ({@code Bearer}) e a data de expiración
+     *         o tipo ({@code Bearer}) e a data de expiración
      * @throws org.springframework.security.authentication.BadCredentialsException
      *         se o username non existe ou o contrasinal é incorrecto
      *         ({@code GlobalExceptionHandler} → 401)
@@ -66,56 +76,97 @@ public class AuthController {
      */
     @Operation(summary = "Iniciar sesión e obter tokens JWT")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Login correcto; devolve access token e refresh token"),
+        @ApiResponse(responseCode = "200", description = "Login correcto; devolve access token; refresh token en cookie HttpOnly"),
         @ApiResponse(responseCode = "401", description = "Credenciais incorrectas"),
         @ApiResponse(responseCode = "403", description = "Conta non verificada por correo electrónico")
     })
     @PostMapping("/entrar")
-    public ResponseEntity<JwtResponseDTO> authenticateUser(@Valid @RequestBody LoginRequestDTO request){
-        return ResponseEntity.ok(authService.entrar(request));
+    public ResponseEntity<JwtResponseDTO> authenticateUser(
+            @Valid @RequestBody LoginRequestDTO request,
+            HttpServletResponse response) {
+        AuthService.LoginResult result = authService.entrar(request);
+        addRefreshCookie(response, result.refreshTokenHash());
+        return ResponseEntity.ok(result.jwtResponse());
     }
 
     /**
-     * Rota o par de tokens: invalida o refresh token actual e emite un novo par.
+     * Rota o par de tokens: le o refresh token da cookie, invalida o token actual
+     * e emite un novo par (novo access token + nova cookie refresh).
      *
-     * <p>Implementa rotación de refresh token: o token enviado queda revogado
+     * <p>Implementa rotación de refresh token: o token recibido queda revogado
      * e xéranse un novo access token e un novo refresh token. Isto limita a
      * fiestra de reutilización en caso de roubo do token.</p>
      *
-     * @param request corpo coa propiedade {@code refreshToken} (hash UUID do token activo)
-     * @return {@code 200 OK} con {@link JwtResponseDTO} co novo par de tokens
-     * @throws RuntimeException se o refresh token non existe ou xa expirou
-     *                          ({@code GlobalExceptionHandler} → 500)
+     * @param refreshToken hash do refresh token activo, lido da cookie {@code refresh_token}
+     * @param response     resposta HTTP onde se engade a nova cookie {@code refresh_token}
+     * @return {@code 200 OK} con {@link JwtResponseDTO} co novo access token,
+     *         ou {@code 401} se a cookie non está presente ou o token é inválido
      */
-    @Operation(summary = "Renovar o par de tokens JWT mediante refresh token")
+    @Operation(summary = "Renovar o par de tokens JWT mediante refresh token en cookie")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Novo par de tokens emitido correctamente"),
-        @ApiResponse(responseCode = "401", description = "Refresh token inválido ou expirado")
+        @ApiResponse(responseCode = "401", description = "Cookie refresh_token ausente, inválida ou expirada")
     })
     @PostMapping("/renovar")
-    public ResponseEntity<JwtResponseDTO> refresh(@Valid @RequestBody RefreshTokenRequestDTO request) {
-        return ResponseEntity.ok(refreshTokenService.refresh(request));
+    public ResponseEntity<JwtResponseDTO> refresh(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken,
+            HttpServletResponse response) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        RefreshTokenService.RefreshResult result = refreshTokenService.refresh(refreshToken);
+        addRefreshCookie(response, result.refreshTokenHash());
+        return ResponseEntity.ok(result.jwtResponse());
     }
 
-
     /**
-     * Pecha a sesión da usuaria revogando o refresh token activo.
+     * Pecha a sesión da usuaria revogando o refresh token activo e invalidando a cookie.
      *
      * <p>O access token existente non se invalida de forma explícita
      * (non hai lista negra), pero expirará ao cabo do seu período configurado.
-     * Se o token enviado non existe, a operación non fai nada (idempotente).</p>
+     * Se a cookie non está presente, a operación responde {@code 200} igualmente
+     * (idempotente).</p>
      *
-     * @param request corpo coa propiedade {@code refreshToken} a revogar
+     * @param refreshToken hash do refresh token activo, lido da cookie {@code refresh_token}
+     * @param response     resposta HTTP onde se engade a cookie de borrado (Max-Age=0)
      * @return {@code 200 OK} con mensaxe de confirmación do peche de sesión
      */
     @Operation(summary = "Pechar sesión e revogar o refresh token")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Sesión pechada correctamente"),
-        @ApiResponse(responseCode = "400", description = "Corpo da petición inválido")
+        @ApiResponse(responseCode = "200", description = "Sesión pechada correctamente")
     })
     @PostMapping("/pechar")
-    public ResponseEntity<?> logout(@Valid @RequestBody RefreshTokenRequestDTO request) {
-        authService.sair(request);
-        return ResponseEntity.ok("Sesión pechada correctaente");
+    public ResponseEntity<?> logout(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken,
+            HttpServletResponse response) {
+        clearRefreshCookie(response);
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            authService.sair(refreshToken);
+        }
+        return ResponseEntity.ok("Sesión pechada correctamente");
+    }
+
+    // ── Utilidades privadas de cookie ────────────────────────────────────────
+
+    private void addRefreshCookie(HttpServletResponse response, String tokenHash) {
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", tokenHash)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Strict")
+                .path("/api/auth")
+                .maxAge(Duration.ofDays(7))
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearRefreshCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Strict")
+                .path("/api/auth")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

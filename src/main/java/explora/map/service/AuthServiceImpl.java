@@ -2,7 +2,6 @@ package explora.map.service;
 
 import explora.map.dto.JwtResponseDTO;
 import explora.map.dto.LoginRequestDTO;
-import explora.map.dto.RefreshTokenRequestDTO;
 import explora.map.dto.RegisterRequestDTO;
 import explora.map.entity.RefreshToken;
 import explora.map.entity.RolApp;
@@ -118,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Transactional
     @Override
-    public JwtResponseDTO entrar(LoginRequestDTO request) throws RuntimeException{
+    public AuthService.LoginResult entrar(LoginRequestDTO request) throws RuntimeException{
         try{
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
             String username =  authentication.getName();
@@ -132,7 +131,12 @@ public class AuthServiceImpl implements AuthService {
             String accessToken = jwtUtils.generateTokenFromUsername(username);
             RefreshToken refreshToken = refreshTokenService.novo(usuaria);
             LocalDateTime tokenExpiration = jwtUtils.getExpirationDateTime(accessToken);
-            return new JwtResponseDTO(accessToken, refreshToken.getTokenHash(), "Bearer", tokenExpiration);
+            JwtResponseDTO dto = JwtResponseDTO.builder()
+                    .accessToken(accessToken)
+                    .tokenType("Bearer")
+                    .tokenExpiration(tokenExpiration)
+                    .build();
+            return new AuthService.LoginResult(dto, refreshToken.getTokenHash());
         }catch (AuthenticationException e){
             throw new BadCredentialsException("Username ou contrasinal incorrecto.");
         }
@@ -148,8 +152,8 @@ public class AuthServiceImpl implements AuthService {
      */
     @Transactional
     @Override
-    public void sair(RefreshTokenRequestDTO request){
-        refreshTokenService.revoke(request.getRefreshToken());
+    public void sair(String refreshToken){
+        refreshTokenService.revoke(refreshToken);
         logger.info("Logout: refresh token invalidado");
     }
 

@@ -1,7 +1,6 @@
 package explora.map.service;
 
 import explora.map.dto.JwtResponseDTO;
-import explora.map.dto.RefreshTokenRequestDTO;
 import explora.map.entity.RefreshToken;
 import explora.map.entity.Usuaria;
 import explora.map.repository.RefreshTokenRepository;
@@ -64,8 +63,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Transactional
     @Override
-    public JwtResponseDTO refresh(RefreshTokenRequestDTO request) {
-        RefreshToken stored = refreshTokenRepository.findByTokenHash(request.getRefreshToken())
+    public RefreshTokenService.RefreshResult refresh(String refreshTokenHash) {
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(refreshTokenHash)
                 .orElseThrow(() -> new RuntimeException("Refresh token non válido ou inexistente"));
 
         verifyExpiration(stored);
@@ -76,12 +75,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         String newAccessToken = jwtUtils.generateTokenFromUsername(usuaria.getUsername());
         RefreshToken newRefresh = novo(usuaria);
 
-        return JwtResponseDTO.builder()
+        JwtResponseDTO dto = JwtResponseDTO.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(newRefresh.getTokenHash())
                 .tokenType("Bearer")
                 .tokenExpiration(jwtUtils.getExpirationDateTime(newAccessToken))
                 .build();
+        return new RefreshTokenService.RefreshResult(dto, newRefresh.getTokenHash());
     }
 
     @Override
