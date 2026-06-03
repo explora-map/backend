@@ -100,8 +100,23 @@ public class PerfilServiceImpl implements PerfilService {
             usuaria.setCorreo(dto.getCorreo());
         }
 
-        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            usuaria.setHashPassword(passwordEncoder.encode(dto.getPassword()));
+        String contrasinelNovo = dto.getContrasinelNovo();
+        boolean quereChangar = contrasinelNovo != null && !contrasinelNovo.isBlank();
+        if (quereChangar) {
+            String contrasinelActual = dto.getContrasinelActual();
+            if (contrasinelActual == null || contrasinelActual.isBlank()) {
+                throw new IllegalArgumentException("Debes indicar o contrasinal actual.");
+            }
+            if (!passwordEncoder.matches(contrasinelActual, usuaria.getHashPassword())) {
+                throw new IllegalArgumentException("O contrasinal actual é incorrecto.");
+            }
+            if (contrasinelNovo.equals(contrasinelActual)) {
+                throw new IllegalArgumentException("O novo contrasinal debe ser diferente ao actual.");
+            }
+            if (!contrasinelNovo.equals(dto.getContrasinelNovoConfirmacion())) {
+                throw new IllegalArgumentException("Os contrasineis novos non coinciden.");
+            }
+            usuaria.setHashPassword(passwordEncoder.encode(contrasinelNovo));
         }
 
         if (dto.getIdioma() != null

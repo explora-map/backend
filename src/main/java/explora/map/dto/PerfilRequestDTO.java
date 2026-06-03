@@ -17,8 +17,9 @@ public class PerfilRequestDTO {
     @Size(min = 8, max = 50)
     private String correo;
 
-    @Size(min = 8, max = 40)
-    private String password;
+    private String contrasinelActual;
+    private String contrasinelNovo;
+    private String contrasinelNovoConfirmacion;
 
     private String idioma;
 }
