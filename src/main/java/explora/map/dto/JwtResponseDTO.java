@@ -22,4 +22,6 @@ public class JwtResponseDTO {
     private String tokenType = "Bearer";
     @Schema(description = "Data e hora de expiración do access token", example = "2026-04-15T10:30:00")
     private LocalDateTime tokenExpiration;
+    @Schema(description = "Nome de usuaria autenticada", example = "maria_lopez")
+    private String username;
 }

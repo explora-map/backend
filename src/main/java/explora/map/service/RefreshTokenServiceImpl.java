@@ -79,6 +79,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .accessToken(newAccessToken)
                 .tokenType("Bearer")
                 .tokenExpiration(jwtUtils.getExpirationDateTime(newAccessToken))
+                .username(usuaria.getUsername())
                 .build();
         return new RefreshTokenService.RefreshResult(dto, newRefresh.getTokenHash());
     }
