@@ -148,7 +148,7 @@ public class AuthServiceImpl implements AuthService {
      * <p>Revoga o refresh token na base de datos, impedindo calquera renovación futura
      * con ese token. O access token seguirá sendo válido ata a súa expiración natural.</p>
      *
-     * @param request contén o refresh token a invalidar
+     * @param refreshToken contén o refresh token a invalidar
      */
     @Transactional
     @Override
